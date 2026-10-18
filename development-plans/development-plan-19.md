@@ -187,11 +187,16 @@ Supabase is still intact; do not delete it yet.
   revoked-session 401. The certificate was trusted only by that test process.
   Shared response headers now apply in Next.js previews and `next start` as well
   as Vercel. Redacted local evidence is ignored under `.dev-processes/`.
+- Delivered the implementation and required prior restructuring in commit
+  `0a8a0f2620ce60b6f661bca0d53990402d49e648` to `pre-production`.
+  GitHub confirmed the repository's canonical name is now
+  `asteroidcrib729/catanova-lms`; updated the local origin and deployment
+  references to that verified location. No main merge or public deployment was
+  performed. The follow-up reference correction is reported in Git as well.
 
 ### Remaining work before public production cutover
 
-1. Deliver the validated, authorized changes to `pre-production` (delivery SHA
-   is reported in Git), then obtain the user's manual PR merge into `main`.
+1. Obtain the user's manual PR merge from `pre-production` into `main`.
    Do not deploy stale source or treat a branch push as a completed public launch.
 2. The owner creates their production administrator via masked local input and
    verifies it with `database verify --require-administrator`. Never ask for
@@ -295,7 +300,7 @@ credential disclosure, or new chat is now required. Repository root is
   backend-to-database distance. Do not relocate other applications.
 - Host FastAPI on Render in the user-confirmed **My Workspace**. Host the Next.js
   frontend on Vercel, connecting both services to the existing repository:
-  `https://github.com/asteroidcrib729/library-management-system`.
+  `https://github.com/asteroidcrib729/catanova-lms` (GitHub-confirmed rename).
 - Production tracks `main`. Preserve the user's manual PR merge workflow from
   `pre-production`; do not push directly to `main` or deploy stale source just
   to produce a URL.

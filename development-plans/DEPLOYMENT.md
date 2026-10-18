@@ -122,7 +122,7 @@ Hosting resources have **not** been created. First merge `pre-production` into
 `main` commit. Do not deploy the old `main` or enable automatic releases.
 
 1. Reserve the Vercel project `catanova-lms` in the confirmed account. Connect
-   `asteroidcrib729/library-management-system`, branch `main`, root `frontend`,
+   `asteroidcrib729/catanova-lms`, branch `main`, root `frontend`,
    Node 24, install `npm ci`, build `npm run build`. Keep Git-triggered automatic
    deployments disabled so releases use the gate below. Note its canonical HTTPS
    production origin; this becomes `APP_ORIGIN`.

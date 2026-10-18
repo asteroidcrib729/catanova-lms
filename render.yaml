@@ -2,7 +2,7 @@
 services:
   - type: web
     name: catanova-api
-    repo: https://github.com/asteroidcrib729/library-management-system
+    repo: https://github.com/asteroidcrib729/catanova-lms
     branch: main
     region: singapore
     runtime: python
