@@ -4,7 +4,9 @@ Started: 2026-10-18. Status: database migration and Prisma-backed local preview
 verified; same-origin HTTPS authentication and production release tooling
 implemented. PR #2 is merged; the production administrator, hosting connections,
 verified Render readiness and encrypted backup/restore are complete. Public
-frontend release and final hosted browser verification remain pending.
+frontend release and final hosted browser verification remain pending. The team-
+scoped CI token now works; the monorepo build-directory correction needs the
+owner's PR merge before a new exact-main release.
 Supabase is still intact; do not delete it yet.
 
 ## Execution record
@@ -197,13 +199,12 @@ Supabase is still intact; do not delete it yet.
 
 ### Remaining work before public production cutover
 
-1. The owner verifies the replacement Vercel CI token privately using
-   `scripts/set-vercel-ci-token.ps1 -Publish`. It checks user identity and exact
-   project/team access before writing the production GitHub secret through stdin.
-   Replacement alone did not resolve authentication (release attempt 2 failed).
-   Never read local authentication stores, retrieve existing encrypted CI secrets,
-   or request a token in chat.
-2. Rerun the failed release job for the same reviewed main SHA. Require successful
+1. The owner merges the follow-up pre-production PR, including the monorepo
+   working-directory correction and regression tests. The team-scoped Vercel
+   token was accepted in release attempt 3; no additional token replacement is
+   currently needed. Never retrieve encrypted CI secrets or request them in chat.
+2. After stable CI passes for the new current main SHA, dispatch a fresh release
+   for that full SHA; do not retry the old checkout containing the path bug. Require successful
    Vercel build/deploy and authenticated same-origin smoke checks, then verify the
    actual public browser flow and scoped persistence/role/CSRF/logout behavior.
 3. Recheck source counts before declaring cutover and preserve Supabase. Current
@@ -297,6 +298,41 @@ Supabase is still intact; do not delete it yet.
   confirmed provider exception details and the synthetic token were not exposed.
   Real validation/publication requires the owner's hidden terminal input; it has
   not been claimed as completed or used to bypass the gated release.
+- The owner clarified that both rejected tokens were project-only. Inspected
+  the pinned CLI's user/team lookup and Vercel issue
+  [17506](https://github.com/vercel/vercel/issues/17506), which reports the same
+  user-404/team-403/project-200 pattern. A project-only token can be valid yet
+  incompatible with this workflow; corrected the helper's diagnostic accordingly.
+  The owner then privately replaced the secret with a personal access token
+  scoped to the owning team. Release attempt 3 **passed Vercel pull**, confirming
+  that authentication is resolved for this pipeline. Team scope is broader than
+  project-only access; full-account access was not requested.
+- The owner changed the dashboard domain to `https://catanova.vercel.app`.
+  Verified that exact domain belongs to CataNova and is verified. Updated only
+  Vercel production APP_ORIGIN, GitHub production PRODUCTION_WEB_BASE_URL and
+  Render LMS_ALLOWED_ORIGINS to that origin. Render MCP merged the single key
+  without replacing other configuration and triggered deploy
+  `dep-dbacke61egvs73a73kt0`. The service remains MCP/CLI-managed, not a Blueprint;
+  render.yaml already leaves this origin operator-supplied (`sync: false`).
+- Attempt 3 stopped at dashboard build with `spawn sh ENOENT`, before deployment.
+  Confirmed the root cause in CLI 64.5.0: build workPath is
+  `join(cwd, project.settings.rootDirectory || '.')`. Running inside frontend
+  with provider rootDirectory=frontend produces a nonexistent frontend/frontend.
+  Changed Vercel pull/build/deploy to explicit repository-root working directories,
+  leaving the correct provider rootDirectory untouched. Added contract validation
+  and four regression cases covering each doubled directory and a missing explicit
+  directory. This correction is on pre-production only; main remains unchanged.
+  Hosted build/deploy and browser checks must resume after the owner's manual merge.
+- Rechecked Supabase read-only after the domain/token changes: all eleven
+  business/session tables still contain zero rows, with three schema-version rows.
+  No source records, configuration, grants or project lifecycle were changed.
+- Correction validation: **186 backend unit/API tests passed**, with 29 PostgreSQL
+  tests deselected locally. Ruff lint and formatting passed; Pyrefly reported zero
+  errors. All three workflows passed actionlint and deployment contracts passed.
+  Public Render readiness returned 200, production and the reviewed main revision;
+  a preflight from `https://catanova.vercel.app` returned 200 with that exact
+  allowed origin. These are backend/contract checks, not evidence that Vercel has
+  built or deployed the corrected workflow or that public browser checks passed.
 - New diagnostic validation: 182 unit/API tests passed, 29 PostgreSQL tests
   deselected locally; Ruff passed and Pyrefly reported zero errors. Existing main
   CI provides the separate PostgreSQL gate. Final production browser verification

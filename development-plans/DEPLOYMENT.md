@@ -122,7 +122,7 @@ or restore over these already initialized databases.
 The owner merged PR #2; stable CI passed for `dfc1c74`. Hosting resources are now
 created and Git-connected (identities in
 [`deploy/hosting-resources.json`](../deploy/hosting-resources.json)). Backend:
-`https://catanova-api.onrender.com`; dashboard: `https://catanova-lms.vercel.app`.
+`https://catanova-api.onrender.com`; dashboard: `https://catanova.vercel.app`.
 Resource creation alone is not a verified public release. Keep automatic releases
 disabled and use the gate below. The following records the setup for recreation:
 
@@ -164,7 +164,10 @@ Configure these values there; the complete contract is
 Use a dedicated ordinary member account for repeatable smoke checks when
 available. Smoke checks sign in/out and verify session security; they do not
 create catalog or circulation records. Keep the Vercel token scoped to the
-intended team/project and keep the Render deploy hook private.
+owning team, `farazhussain-5000's projects`, and keep the Render deploy hook
+private. The current CLI pull/build workflow requires user/team lookups that
+fail with project-only tokens; use an expiring team-scoped personal access token,
+not full-account access. Team scope grants access beyond this single project.
 
 If Vercel rejects the CI token, run `./scripts/set-vercel-ci-token.ps1 -Publish`
 from the repository root in your own terminal. Paste the actual token value at
@@ -179,6 +182,11 @@ the full current `main` SHA and confirmation `DEPLOY-PRODUCTION`. The workflow:
 3. Deploys that exact backend commit and checks readiness plus reported revision.
 4. Builds/deploys the same frontend checkout and runs authenticated same-origin
    smoke checks, retaining redacted evidence for seven days.
+
+The Vercel CLI steps run from the **repository root**. Keep the provider's Root
+Directory set to `frontend`; running the CLI inside frontend applies that path
+twice. The fix is awaiting the owner's pre-production PR merge; after merging,
+wait for CI and start a fresh release for the new main SHA, not an old failed run.
 
 Finally verify in a real browser: sign-in, role-restricted writes, reload,
 persistence and logout. Local HTTPS verification passed; public hosting still

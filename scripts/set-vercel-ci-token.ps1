@@ -7,6 +7,8 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 # Run in the owner's terminal. Never supply a token through arguments or files.
+# This verifies compatibility with the current user/team-based CLI workflow;
+# a project-only token can be valid yet fail its identity lookup.
 $repository = 'asteroidcrib729/catanova-lms'
 $teamId = 'team_grJesWXYv44pv3DuOPkWPa9z'
 $projectId = 'prj_jlPOOmpVvFgNu6HeHPZ4SWHKKEUe'
@@ -68,7 +70,7 @@ try {
     # Do not expose exception objects, request headers, response bodies or tokens.
     Write-Output "Failed at: $stage. No token value was logged."
     if ($stage -eq 'Vercel identity') {
-        Write-Output 'Vercel did not accept this token for a user identity. Check the actual generated value and account; contact Vercel support if a fresh personal access token also fails.'
+        Write-Output 'This workflow needs an expiring personal access token scoped to the owning team. A valid project-only token can fail this user lookup; failure alone does not mean the token value is invalid.'
     }
     throw 'Vercel CI token setup did not complete. GitHub is updated only after both Vercel checks pass.'
 } finally {

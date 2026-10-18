@@ -275,8 +275,10 @@ passed. Same-origin API relay and manual exact-commit production release/backup
 workflows are implemented. PR #2 is merged; the owner-created production
 administrator, Git-connected hosting, live Render readiness, encrypted GitHub
 backup and real disposable restore checks are verified. The public frontend
-release is pending replacement of a rejected Vercel CI token and final hosted
-browser checks. Supabase is untouched. See Plan 19 for current execution evidence.
+release is pending the monorepo workflow correction's manual PR merge and final
+hosted browser checks. The team-scoped Vercel CI token is accepted; the dashboard
+domain is `https://catanova.vercel.app`. Supabase is untouched. See Plan 19 for
+current execution evidence.
 The owner-capable Prisma credential does not reproduce isolated runtime SQL roles;
 see Plan 19 before exposing production. Local tests are not public capacity or
 hosted disaster-recovery evidence.

@@ -21,6 +21,6 @@
     "node_version": "24.x",
     "function_region": "sin1",
     "git_build_ignore_command": "exit 0",
-    "web_origin": "https://catanova-lms.vercel.app"
+    "web_origin": "https://catanova.vercel.app"
   }
 }

@@ -136,12 +136,13 @@ jobs:
           npm ci --prefix frontend
           echo "VERCEL_CLI_VERSION=$(node -p "require('./deploy/cloud-toolchain.json').vercel")" >> "$GITHUB_ENV"
       - name: Pull production Vercel configuration
-        working-directory: frontend
+        # Vercel applies the project's rootDirectory=frontend itself.
+        working-directory: .
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: npx --yes "vercel@$VERCEL_CLI_VERSION" pull --yes --environment=production --scope "$VERCEL_ORG_ID"
       - name: Build the checked-out production dashboard
-        working-directory: frontend
+        working-directory: .
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           BACKEND_API_URL: ${{ vars.PRODUCTION_API_BASE_URL }}
@@ -149,7 +150,7 @@ jobs:
           NEXT_PUBLIC_API_BASE_URL: ""
         run: npx --yes "vercel@$VERCEL_CLI_VERSION" build --prod --scope "$VERCEL_ORG_ID"
       - name: Deploy prebuilt dashboard without rebuilding a different revision
-        working-directory: frontend
+        working-directory: .
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
