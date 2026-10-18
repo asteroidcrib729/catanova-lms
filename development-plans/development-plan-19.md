@@ -1,15 +1,16 @@
 # Development plan 19: Prisma Postgres and Git-backed production deployment
 
-Started: 2026-10-18. Status: database migration and Prisma-backed local preview
-verified; same-origin HTTPS authentication and production release tooling
-implemented. PR #2 is merged; the production administrator, hosting connections,
-verified Render readiness and encrypted backup/restore are complete. Public
-frontend release and final hosted browser verification remain pending. The team-
-scoped CI token now works; the monorepo build-directory correction needs the
-owner's PR merge before a new exact-main release.
-Supabase is still intact; do not delete it yet.
+Started and completed: 2026-10-18. Status: **complete**. Database migration,
+Prisma-backed local preview, encrypted backup/restore, Git-backed production
+release and real public-browser verification passed. PR #3 released reviewed
+commit `9a5cf1a47eb4cdbe9c39119ba5633bf4e163b45b` to Render and Vercel.
+Dashboard: <https://catanova.vercel.app>. Supabase remains intact; its retirement
+is a separate owner decision, not an automated step of this plan.
 
-## Execution record
+## Chronological execution record
+
+Earlier pending statements below describe the state at that point in execution;
+the final production cutover record supersedes them.
 
 - Installed and ran the pinned Prisma, Vercel, and Render CLIs. Render's Windows
   archive passed the official release SHA-256 check. Browser logins completed
@@ -197,23 +198,19 @@ Supabase is still intact; do not delete it yet.
   references to that verified location. No main merge or public deployment was
   performed. The follow-up reference correction is reported in Git as well.
 
-### Remaining work before public production cutover
+### Cutover completion checklist
 
-1. The owner merges the follow-up pre-production PR, including the monorepo
-   working-directory correction and regression tests. The team-scoped Vercel
-   token was accepted in release attempt 3; no additional token replacement is
-   currently needed. Never retrieve encrypted CI secrets or request them in chat.
-2. After stable CI passes for the new current main SHA, dispatch a fresh release
-   for that full SHA; do not retry the old checkout containing the path bug. Require successful
-   Vercel build/deploy and authenticated same-origin smoke checks, then verify the
-   actual public browser flow and scoped persistence/role/CSRF/logout behavior.
-3. Recheck source counts before declaring cutover and preserve Supabase. Current
-   initialization is not an online replication mechanism; any unexpected new
-   source records require reconciliation, not deletion or a blind switch.
-4. Deliver execution evidence and owner-command improvements to pre-production;
-   the owner retains control over their manual PR merge. Do not deploy unreviewed
-   follow-up code just to claim the plan is complete.
-5. Only after successful live cutover should the owner separately retire Supabase.
+- [x] Owner merged PR #3, including the monorepo correction, after review.
+- [x] Stable main CI passed for `9a5cf1a`; a fresh exact-main release succeeded.
+- [x] Render and Vercel serve that same commit in Singapore, with the new domain.
+- [x] Hosted authenticated smoke and real Chrome read/write/security checks passed.
+- [x] Final read-only source counts match the migration baseline; Supabase is intact.
+- [x] Redacted evidence and current operating instructions are recorded below.
+
+Ongoing owner operations: retain backups and their decryption identity separately,
+monitor service health/usage and token expiry, and merge evidence-only follow-ups
+through the usual PR process. Retiring Supabase is optional and separately
+authorized. After new Prisma writes, switching back requires data reconciliation.
 
 ### Hosted execution after the owner's PR merge
 
@@ -338,6 +335,61 @@ Supabase is still intact; do not delete it yet.
   CI provides the separate PostgreSQL gate. Final production browser verification
   remains required after Vercel authentication and the gated release succeed.
 
+### Final production cutover: verified 2026-10-18
+
+- Owner merged [PR #3](https://github.com/asteroidcrib729/catanova-lms/pull/3) at
+  `9a5cf1a47eb4cdbe9c39119ba5633bf4e163b45b`. Its complete
+  [main CI run](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39136482590)
+  passed, including PostgreSQL and frontend build checks. Local pre-production
+  was fast-forwarded to that reviewed merge before preparing this evidence.
+- Fresh [production release 39136631884](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39136631884)
+  succeeded end to end. It verified the existing production schema read-only,
+  deployed the exact backend revision, built from the corrected repository root,
+  deployed the prebuilt dashboard and passed authenticated same-origin smoke checks.
+  No migration ran during server startup and no unreviewed source was deployed.
+- Render deploy `dep-dbadid2jnfac73fa6i10` is **live**. Direct and relayed readiness
+  returned 200, production, PostgreSQL ready and the exact reviewed revision.
+  Vercel deployment `dpl_3PEBTkSA5PHyVAM6uLTFyzAD9524` is **READY**, production,
+  with matching githubCommitSha and functions in `sin1`. Vercel reported nine
+  seconds of deployment processing for the already-built output; this is not the
+  separate runner's compilation time. Canonical dashboard:
+  <https://catanova.vercel.app>; backend: <https://catanova-api.onrender.com>.
+- Downloaded redacted release artifact `12139932784` and inspected readiness,
+  smoke results and the deployment URL. It is retained for seven days; local
+  evidence is ignored under `.dev-processes/release-39136631884/`. Smoke proved
+  web/live/ready/session 200, hostile origin and missing CSRF 403, logout 204,
+  revoked session 401 and the same-origin relay's private cache boundary.
+- Real Chrome used public trusted HTTPS, without bypassing certificate checks or
+  deployment protection. Sign-in reached the dashboard with Secure/HttpOnly/
+  SameSite=Lax session cookies on catanova.vercel.app and a readable root-path
+  CSRF cookie. Production first-setup UI was absent; the principal was the
+  dedicated ordinary smoke-test member, with no Accounts UI or staff privileges.
+- The browser submitted one marked feedback record through Next.js and FastAPI
+  to Prisma. Two concurrent same-key replays returned the same single record;
+  the row remained visible after page reload and a direct database count was one.
+  Staff-only catalog writes, missing CSRF and a hostile Origin were rejected.
+  Logout cleared cookies and revoked the session. A 320px viewport stayed
+  contained; JavaScript errors and direct browser-to-Render requests were zero.
+- After verification, removed only marked feedback and dedicated test-member
+  idempotency records. Confirmed the marked row was gone; no catalog, circulation,
+  owner account or source records were removed. The approved test member remains,
+  and its rotated password was published privately to the protected GitHub secret.
+  No administrator credential was read. Redacted browser evidence is ignored at
+  `.dev-processes/production-browser-evidence.json`.
+- Post-release Render application-error scan and the Vercel deployment's runtime
+  error query both returned **zero errors** in the bounded verification window.
+  Vercel CLI 64.5.0 uses `logs runtime --query level:error --deployment ID`, not
+  the removed `--level` option. No external alerting/drain service was configured
+  by this plan; short clean scans are not load/capacity guarantees.
+- Final Supabase counts: all eleven business/session tables zero, schema_version
+  three with the original timestamps; Auth users and Storage objects zero.
+  Source project remains intact. Existing encrypted backup and disposable
+  restore evidence above remains valid; operational retention/off-machine copies
+  are an owner responsibility. Prisma's owner-capable runtime credential and lack
+  of DML-only SQL-role isolation remain explicitly accepted limitations. Render
+  free-tier cold starts and bounded resources still apply; no keep-awake automation
+  or paid upgrades were introduced.
+
 ## Permission compatibility investigation — retained findings
 
 User direction on 2026-10-18: proceed with the work needed for Supabase-to-Prisma
@@ -365,7 +417,7 @@ separate restricted runtime role. These Prisma credentials report
 that security model, delete grants from historical SQL, disable RLS, use the
 production credential in development, or continue a partial import.
 
-Before continuing:
+Historical investigation checklist (subsequently executed as recorded above):
 
 1. Follow the user's existing authorization to investigate and adapt the
    database-level permission model; do not ask for the same approval again.
@@ -379,8 +431,9 @@ Before continuing:
 5. Obtain source access through the Supabase integration or an ignored credential
    file, inspect real source policies, then execute the backup/import plan.
 
-The remaining GitHub/Vercel/Render connections and public launch are intentionally
-pending, not completed. Supabase must not be deleted at this stage.
+At this investigation stage, GitHub/Vercel/Render connections and public launch
+were pending. They subsequently passed as recorded in the final cutover section;
+this historical checkpoint did not authorize deleting Supabase.
 
 ### Verified target capabilities after continuation approval
 

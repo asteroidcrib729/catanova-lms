@@ -85,15 +85,17 @@ its compiler package locked in `frontend/package-lock.json`.
 
 ### Prisma hosted development
 
-[Plan 19](development-plans/development-plan-19.md) moves hosting to Prisma
+[Plan 19](development-plans/development-plan-19.md) migrated hosting to Prisma
 Postgres, retaining FastAPI and psycopg. Production and development databases
-remain separate. No production cutover is implied by the configuration below.
+remain separate. Public production cutover was verified on 2026-10-18; the
+configuration below connects local preview only to the development database.
 
 Both Prisma schemas have been initialized and reconciled with the empty hosted
 Supabase source. That source contained no accounts, catalog items, or circulation
 records. Existing migration timestamps were preserved. See the concise
 [deployment guide](development-plans/DEPLOYMENT.md) for connection setup and the
-provider's SQL-role limitations. Keep Supabase until public cutover is verified.
+provider's SQL-role limitations. Supabase is intact; retirement remains a separate
+owner decision.
 
 After the development database is provisioned and initialized, copy
 `.env.development.example` to the ignored `.env.development` and set its private
@@ -267,21 +269,19 @@ Passwords are handled with Argon2id through `argon2-cffi`. Plaintext passwords m
 
 ## Project status
 
-The CLI remains available alongside the role-aware Next.js dashboard and FastAPI
-backend. Plan 19 initialized isolated Prisma development/production databases and
-reconciled the empty Supabase source, preserving its migration timestamps. Local
-real-browser read/write, persistence, concurrency, HTTPS cookies and CSRF checks
-passed. Same-origin API relay and manual exact-commit production release/backup
-workflows are implemented. PR #2 is merged; the owner-created production
-administrator, Git-connected hosting, live Render readiness, encrypted GitHub
-backup and real disposable restore checks are verified. The public frontend
-release is pending the monorepo workflow correction's manual PR merge and final
-hosted browser checks. The team-scoped Vercel CI token is accepted; the dashboard
-domain is `https://catanova.vercel.app`. Supabase is untouched. See Plan 19 for
-current execution evidence.
-The owner-capable Prisma credential does not reproduce isolated runtime SQL roles;
-see Plan 19 before exposing production. Local tests are not public capacity or
-hosted disaster-recovery evidence.
+Plan 19 is complete. [CataNova](https://catanova.vercel.app) runs on Vercel with
+FastAPI on Render and separate production/development Prisma Postgres databases.
+PR #3 released reviewed commit `9a5cf1a`; CI, authenticated release smoke checks
+and real public-Chrome read/write, reload persistence, concurrent retries,
+role/CSRF/origin protections, secure cookies and logout passed. The marked test
+feedback was removed afterward; the dedicated ordinary smoke member remains.
+Encrypted GitHub backup and a real disposable restore drill also passed.
+
+The CLI remains available. Supabase is intact; its empty source was reconciled
+while preserving migration timestamps. Retirement is a separate owner decision.
+The owner-capable Prisma credential does not provide isolated runtime SQL roles,
+and free-tier cold starts still apply. See Plan 19 for evidence, accepted limits
+and ongoing backup/monitoring responsibilities; these checks are not a load test.
 
 ## Deployment readiness
 

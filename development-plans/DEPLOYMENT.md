@@ -3,6 +3,10 @@
 Stack: **Prisma Postgres → Render FastAPI → Vercel Next.js**.
 Run PowerShell commands from the repository root; stop on errors.
 
+Production verified on 2026-10-18: <https://catanova.vercel.app>, commit `9a5cf1a`.
+Database, backend, frontend, real-browser writes/security and backup/restore passed.
+The steps below are for connection setup, recreation and future releases.
+
 ## 1. Database connections
 
 The Prisma project `catanova-lms` already contains two Singapore databases:
@@ -14,7 +18,7 @@ The Prisma project `catanova-lms` already contains two Singapore databases:
 
 Both schemas are initialized. Supabase contained no business records; its three
 migration timestamps were preserved in production. Supabase remains untouched.
-Do not delete it until public application cutover is verified.
+Public cutover is now verified; Supabase retirement is a separate owner decision.
 
 In [Prisma Console](https://console.prisma.io/), select the correct database →
 **Connect to your database**. Use the standard PostgreSQL **direct** URL:
@@ -119,12 +123,12 @@ or restore over these already initialized databases.
 
 ## 5. Connect hosting after the reviewed PR merge
 
-The owner merged PR #2; stable CI passed for `dfc1c74`. Hosting resources are now
+The owner merged PR #3; stable CI and release passed for `9a5cf1a`. Resources are
 created and Git-connected (identities in
 [`deploy/hosting-resources.json`](../deploy/hosting-resources.json)). Backend:
 `https://catanova-api.onrender.com`; dashboard: `https://catanova.vercel.app`.
-Resource creation alone is not a verified public release. Keep automatic releases
-disabled and use the gate below. The following records the setup for recreation:
+Keep automatic releases disabled and use the gate below for future releases.
+The following records the verified setup for recreation:
 
 1. Reserve the Vercel project `catanova-lms` in the confirmed account. Connect
    `asteroidcrib729/catanova-lms`, branch `main`, root `frontend`,
@@ -185,14 +189,13 @@ the full current `main` SHA and confirmation `DEPLOY-PRODUCTION`. The workflow:
 
 The Vercel CLI steps run from the **repository root**. Keep the provider's Root
 Directory set to `frontend`; running the CLI inside frontend applies that path
-twice. The fix is awaiting the owner's pre-production PR merge; after merging,
-wait for CI and start a fresh release for the new main SHA, not an old failed run.
+twice. The correction is merged and verified. For future changes, wait for main
+CI and start a fresh release for the new main SHA, not an old failed run.
 
-Finally verify in a real browser: sign-in, role-restricted writes, reload,
-persistence and logout. Local HTTPS verification passed; public hosting still
-requires this separate check. Recheck/freeze Supabase writes before switching
-users. Keep Supabase until cutover is verified. After new Prisma writes, do not
-switch back without reconciling those writes.
+After each release, verify sign-in, protected writes, reload and logout in a real
+browser. These public checks passed on 2026-10-18, including concurrent retries,
+role/CSRF/origin boundaries and database persistence. Supabase remains untouched;
+after new Prisma writes, do not switch back without reconciling those writes.
 
 **Backups:** configure `BACKUP_AGE_RECIPIENT` in the same GitHub environment and
 run **Backup production** with `BACKUP-PRODUCTION`. It encrypts a PostgreSQL 17 archive of `lms` and
@@ -209,7 +212,9 @@ identity separately in a private password manager/offline location, and keep a
 separate encrypted backup copy off this computer. Never upload the identity to
 GitHub. `BACKUP_AGE_RECIPIENT` contains only the public encryption recipient.
 
-See [development-plan-19.md](development-plan-19.md) for evidence and remaining work.
+See [development-plan-19.md](development-plan-19.md) for release evidence and
+ongoing operating responsibilities. The free Render service can cold-start;
+do not automatically replay writes when a warm-up request times out.
 
 ## Optional WSL database
 

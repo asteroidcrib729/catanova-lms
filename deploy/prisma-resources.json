@@ -6,7 +6,8 @@
   "region": "ap-southeast-1",
   "schema_verified_date": "2026-10-18",
   "application_schema_version": 3,
-  "public_cutover_complete": false,
+  "public_cutover_complete": true,
+  "public_cutover_verified_date": "2026-10-18",
   "environments": {
     "production": {
       "branch": "main",
