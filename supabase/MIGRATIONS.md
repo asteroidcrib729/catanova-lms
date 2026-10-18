@@ -8,7 +8,16 @@ Dashboard-only schema changes are prohibited. The CLI owns migration history, wh
 `lms.schema_version` is the API compatibility marker. Migration SQL acquires a
 transaction advisory lock and executes atomically; API startup never migrates.
 
-Apply pending migrations to the local development database from the repository root:
+For Docker Engine in WSL 2, apply pending migrations **inside Ubuntu** from the
+repository root, after `sudo supabase start` succeeds:
+
+```bash
+sudo supabase migration up --local
+```
+
+See [local setup](../development-plans/DEPLOYMENT.md#2-connect-local-development)
+for native Linux CLI installation. If Docker is instead accessible to the Windows
+CLI, the equivalent PowerShell command is:
 
 ```powershell
 & "C:\Program Files\nodejs\npx.cmd" --yes supabase@2.116.0 migration up --local

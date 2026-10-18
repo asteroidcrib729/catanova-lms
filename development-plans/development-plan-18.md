@@ -202,5 +202,6 @@ genuine data were requested. The local Docker/Supabase rehearsal could not run b
 Docker Desktop's Linux engine was not running. Completion now requires explicit owner
 authorization plus dedicated staging projects/domains, protected secret configuration,
 synthetic accounts/data, an encrypted off-provider backup destination, and execution of
-the measured security/load/recovery/rollback spike. `PERFORMANCE-REPORT.md` remains
-intentionally pending rather than substituting invented results.
+the measured security/load/recovery/rollback spike. The evidence record described in
+[`DEPLOYMENT.md`](DEPLOYMENT.md) remains intentionally pending rather than
+substituting invented results.

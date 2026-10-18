@@ -1,82 +1,137 @@
-# Library Management System
+# CataNova
 
-This monorepo contains the Python 3.14 revamp of the original C++ library management system. The legacy source is retained under `legacy/` as a requirements reference. The current web foundation keeps the Python application and FastAPI adapter at the repository root, the Next.js dashboard under `web/`, and local Supabase/PostgreSQL configuration under `supabase/`.
+**Catalog. Manage. Discover.**
+
+CataNova is a connected library workspace for readers and library teams, built as the Python 3.14 revamp of the original C++ project. This monorepo lives in `catanova-lms/`. The legacy source remains under `legacy/`, the FastAPI application and Python CLI under `backend/`, the Next.js dashboard under `frontend/`, and shared PostgreSQL and API contracts under `supabase/` and `contracts/`.
+
+Brand assets and design rules are documented in [BRAND.md](development-plans/BRAND.md). Existing local Supabase container IDs, `lms` database schemas, environment variable names, API routes, session cookies, and GitHub remotes are intentionally preserved. Plan 19 separately provisions Prisma PostgreSQL; branding alone does not migrate data or rename cloud resources.
 
 ## Repository structure
 
 | Path | Responsibility |
 | --- | --- |
-| `src/library_management/` | Domain, application services, adapters, CLI, and FastAPI delivery layer |
-| `tests/` | Python unit, integration, API, and repository tests |
+| `backend/app/main.py` | Canonical FastAPI ASGI entry point (`backend.app.main:app`) |
+| `backend/app/` | Unified application package: domain, services, repositories, API, and CLI |
+| `backend/tests/` | Python unit, integration, API, and repository tests |
 | `contracts/openapi.json` | Deterministic API contract shared with the dashboard |
-| `web/` | Next.js 16 App Router dashboard with strict TypeScript, Tailwind CSS 4, and React Compiler |
+| `frontend/` | Next.js 16 App Router dashboard with strict TypeScript, Tailwind CSS 4, and React Compiler |
 | `supabase/` | Pinned, local-only PostgreSQL/Supabase configuration and migration history |
-| `scripts/` | Contract, validation, CI classification, and PowerShell developer workflows |
+| `backend/scripts/` | Contract, deployment validation, migration, and CI classification tools |
+| `scripts/` | Repository-level PowerShell developer workflows |
 | `development-plans/` | Ordered implementation plans using `development-plan-xx.md` names |
 
 ## Local setup (PowerShell)
 
-The project virtual environment is named `.venv`. To recreate and activate it:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and run this from the repository root. uv uses the pinned Python 3.14 patch in `.python-version`, creates `.venv`, and installs the locked runtime and development dependencies:
 
 ```powershell
-& "C:\Path\To\Python314\python.exe" -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m pip install --editable .
+uv sync --locked
+uv run --locked python --version
 ```
 
 Run the interactive CLI:
 
 ```powershell
-lms
+uv run --locked lms
 ```
 
 Inside the shell, run `help` to list commands. Start a new installation with `bootstrap-admin`; that command is disabled permanently after the first administrator is created. Use `register` for ordinary member accounts and `login` to begin a session. Passwords are collected through masked prompts and are not written to command history.
 
-It can also be started without activating the environment:
+It can also be started as a module:
 
 ```powershell
-.\.venv\Scripts\python.exe -m library_management
+uv run --locked python -m backend.app
 ```
 
 ## FastAPI foundation
 
 The API exposes liveness and database/schema readiness endpoints. With `DATABASE_URL`
-set, lifespan opens a bounded Psycopg pool and readiness verifies schema version 2.
+set, lifespan opens a bounded Psycopg pool and readiness verifies schema version 3.
 Without that setting, liveness works and readiness returns 503. PostgreSQL business
 repositories are complete under Plan 14; the CLI intentionally continues to use SQLite
 until the controlled import and cutover work in later plans.
 
 ```powershell
-$env:DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:55432/postgres'
-.\.venv\Scripts\python.exe -m library_management.api
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+uv run --locked --env-file .env uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
-The default local origin is `http://127.0.0.1:8000`. Configuration is read from environment variables; `.env.example` is a documented template and is not loaded implicitly.
+The API listens at `http://127.0.0.1:8000`; its default allowed dashboard origin is
+`http://localhost:3000`. Run the command from the repository root.
+`backend.app.main:app` is the Weather Glint-style entry point. Configuration
+is read from environment variables; `uv run --env-file .env` explicitly loads the
+root `.env` before starting Uvicorn. A missing local database leaves `/health/ready` at 503 while
+`/health/live` remains available.
 
 ## Next.js dashboard
 
-The isolated frontend requires the Node/npm versions declared in `web/package.json` and `web/.nvmrc`. Use `npm.cmd` because a PowerShell execution policy can block `npm.ps1`:
+The isolated frontend requires the Node/npm versions declared in `frontend/package.json` and `frontend/.nvmrc`. Use `npm.cmd` because a PowerShell execution policy can block `npm.ps1`:
 
 ```powershell
-Set-Location web
+Set-Location frontend
 Copy-Item .env.local.example .env.local
 & "C:\Program Files\nodejs\npm.cmd" ci
 & "C:\Program Files\nodejs\npm.cmd" run dev
 ```
 
-The browser receives only the public FastAPI origin. Database credentials must never be placed in a `NEXT_PUBLIC_*` variable. Tailwind CSS is connected through `@tailwindcss/postcss`; React Compiler is enabled in `web/next.config.ts` with its required compiler package locked in `web/package-lock.json`.
+The browser calls same-origin Next.js API routes. Server-only `BACKEND_API_URL`
+selects FastAPI, and `APP_ORIGIN` selects the canonical dashboard origin; production
+requires both. Leave `NEXT_PUBLIC_API_BASE_URL` empty. Database credentials never
+belong in Vercel or `NEXT_PUBLIC_*` variables. Tailwind CSS is connected through
+`@tailwindcss/postcss`; React Compiler is enabled in `frontend/next.config.ts` with
+its compiler package locked in `frontend/package-lock.json`.
 
 ## Local PostgreSQL
 
-Docker Desktop must be running. The following uses the CLI version pinned in `supabase/CLI_VERSION` and starts only local containers; this repository is not linked to a hosted project:
+### Prisma hosted development
+
+[Plan 19](development-plans/development-plan-19.md) moves hosting to Prisma
+Postgres, retaining FastAPI and psycopg. Production and development databases
+remain separate. No production cutover is implied by the configuration below.
+
+Both Prisma schemas have been initialized and reconciled with the empty hosted
+Supabase source. That source contained no accounts, catalog items, or circulation
+records. Existing migration timestamps were preserved. See the concise
+[deployment guide](development-plans/DEPLOYMENT.md) for connection setup and the
+provider's SQL-role limitations. Keep Supabase until public cutover is verified.
+
+After the development database is provisioned and initialized, copy
+`.env.development.example` to the ignored `.env.development` and set its private
+**development** database URL. Run from the repository root:
 
 ```powershell
-$supabaseVersion = (Get-Content .\supabase\CLI_VERSION -Raw).Trim()
-& "C:\Program Files\nodejs\npx.cmd" --yes "supabase@$supabaseVersion" start
-& "C:\Program Files\nodejs\npx.cmd" --yes "supabase@$supabaseVersion" migration up --local
+uv run --locked --env-file .env.development uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
 ```
+
+Use `LMS_ENVIRONMENT=development`, not `preview`, for local HTTP with a hosted
+database. This mode requires TLS for PostgreSQL and loopback API/browser settings;
+`local` and `test` still reject remote databases. Production keeps HTTPS and secure
+cookies. Keep browser and API on the same hostname (for example `127.0.0.1`).
+In `frontend/`, start with `npm.cmd run dev -- --hostname 127.0.0.1` and visit
+`http://127.0.0.1:3000`.
+
+Pinned cloud CLIs are available through `scripts/cloud.ps1`, for example
+`.\scripts\cloud.ps1 prisma auth whoami --json`. Versions live in
+`deploy/cloud-toolchain.json`; this tooling does not add cloud SDKs to the backend
+or frontend dependencies. Local project links and credential files are ignored.
+
+Run `.\scripts\dev.ps1` to print both preview commands with `.env.development`.
+Use `-EnvFile .env` only to select the existing local/WSL database explicitly.
+Prisma development does not need Docker, Supabase CLI, or Prisma ORM.
+
+### Existing local Supabase setup
+
+Docker Engine in **WSL 2 Ubuntu** is sufficient; Docker Desktop is not required.
+See [the optional WSL database](development-plans/DEPLOYMENT.md#optional-wsl-database), then run these commands **inside Ubuntu**, from the repository:
+
+```bash
+sudo supabase start
+sudo supabase migration up --local
+```
+
+Keep FastAPI and its Python 3.14 `.venv` in Windows; connect to PostgreSQL at
+`127.0.0.1:55432`. Windows `npx.cmd` and `scripts/dev.ps1 -StartDatabase` do not
+automatically use the Ubuntu Docker socket.
 
 `migration up --local` applies pending schema changes without resetting existing local
 data. `db reset` is reserved for intentionally rebuilding disposable data. Application
@@ -95,9 +150,7 @@ accounts, catalog, circulation, finance, engagement, and insights. Run the API o
 applying PostgreSQL migrations:
 
 ```powershell
-$env:DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:55432/postgres'
-$env:LMS_ALLOWED_ORIGINS = 'http://localhost:3000'
-& .\.venv\Scripts\python.exe -m library_management.api
+uv run --locked --env-file .env uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
 Login returns an opaque `HttpOnly` session cookie and a CSRF token (also placed in the
@@ -145,15 +198,17 @@ The process-scoped bypass is necessary on hosts that prohibit local `.ps1` files
 ## Individual quality checks
 
 ```powershell
-pytest
-pyrefly check
-ruff check .
-ruff format --check .
-.\.venv\Scripts\python.exe -m scripts.export_openapi --check
+uv run --locked python -m pytest
+uv run --locked pyrefly check
+uv run --locked ruff check .
+uv run --locked ruff format --check .
+uv run --locked python -m backend.scripts.export_openapi --check
 
-Set-Location web
+Set-Location frontend
 & "C:\Program Files\nodejs\npm.cmd" run check
 ```
+
+`uv.lock` is the authoritative Python dependency lock; there is no `requirements.txt`. Pyrefly and other development tools are in the `dev` dependency group. In `frontend/`, run `npm.cmd run format` to apply Prettier or `npm.cmd run format:check` to verify formatting.
 
 ## CLI appearance
 
@@ -212,28 +267,28 @@ Passwords are handled with Argon2id through `argon2-cffi`. Plaintext passwords m
 
 ## Project status
 
-The CLI remains available while the web revamp has completed Plans 12-17. PostgreSQL
-schema version 3, bounded pooling and transactional concurrency, the validated
-SQLite-to-PostgreSQL migration path, opaque browser sessions, CSRF/CORS and idempotent
-FastAPI capability routes, deterministic OpenAPI generation, and the responsive
-role-aware Next.js dashboard are implemented and verified. The browser talks only to
-FastAPI; it has no Supabase credentials or direct database path. Plan 18 has added
-redacted Render/Vercel descriptors, protected staging automation, deployment validation
-and probes, observability headers, and operational runbooks under `deploy/`. The real
-three-provider staging spike, capacity/security/recovery evidence, genuine-data
-migration, and production cutover remain blocked pending explicit owner authorization
-and Plan 18's external acceptance gates.
+The CLI remains available alongside the role-aware Next.js dashboard and FastAPI
+backend. Plan 19 initialized isolated Prisma development/production databases and
+reconciled the empty Supabase source, preserving its migration timestamps. Local
+real-browser read/write, persistence, concurrency, HTTPS cookies and CSRF checks
+passed. Same-origin API relay and manual exact-commit production release/backup
+workflows are implemented. Public hosting, owner-created production administrator,
+reviewed PR merge, and live cutover are still required. Supabase is untouched.
+The owner-capable Prisma credential does not reproduce isolated runtime SQL roles;
+see Plan 19 before exposing production. Local tests are not public capacity or
+hosted disaster-recovery evidence.
 
 ## Deployment readiness
 
 Validate the committed provider and secret boundaries without contacting a provider:
 
 ```powershell
-.\.venv\Scripts\python.exe -m scripts.validate_deployment
+uv run --locked python -m backend.scripts.validate_deployment
 ```
 
-The staging setup, exact-commit release, smoke/latency/load commands, manual Supabase
-resume, backup/restore, monitoring, quota, and component rollback procedures are in
-`deploy/RUNBOOK.md`. Provider values belong only in the protected locations listed in
-`deploy/ENVIRONMENTS.md`. The **Deploy staging** GitHub workflow is manual and cannot run
-until the owner creates an isolated `staging` environment and supplies its secrets.
+The [deployment guide](development-plans/DEPLOYMENT.md) covers Prisma connections,
+masked owner administrator setup, Render/Vercel configuration, and the manual
+**Deploy production** workflow. The workflow requires successful CI on the exact
+current `main` commit and a protected GitHub `production` environment. Merge from
+`pre-production` through your reviewed PR first. Remaining hosted release gates
+are tracked in [Plan 19](development-plans/development-plan-19.md).

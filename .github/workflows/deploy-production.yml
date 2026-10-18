@@ -1,0 +1,177 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full current main commit SHA with successful CI
+        required: true
+        type: string
+      confirm_production:
+        description: Type DEPLOY-PRODUCTION after reviewing the release
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  checks: read
+
+concurrency:
+  group: catanova-production-release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    name: Verify reviewed main commit and CI
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - name: Require explicit production confirmation and full SHA
+        env:
+          CONFIRMATION: ${{ inputs.confirm_production }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        run: |
+          test "$CONFIRMATION" = "DEPLOY-PRODUCTION"
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - id: commit
+        name: Require the exact current main commit
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        run: |
+          git fetch origin main
+          resolved="$(git rev-parse HEAD)"
+          test "$resolved" = "$REQUESTED_SHA"
+          test "$resolved" = "$(git rev-parse origin/main)"
+          echo "sha=$resolved" >> "$GITHUB_OUTPUT"
+      - name: Require successful stable CI result
+        env:
+          DEPLOY_SHA: ${{ steps.commit.outputs.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          count="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${DEPLOY_SHA}/check-runs" \
+            --jq '[.check_runs[] | select(.name == "CI" and .conclusion == "success")] | length')"
+          test "$count" -ge 1
+
+  deploy:
+    name: Verify Prisma, deploy exact commit, and smoke test
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 35
+    env:
+      DEPLOY_SHA: ${{ needs.verify.outputs.sha }}
+      PRODUCTION_API_BASE_URL: ${{ vars.PRODUCTION_API_BASE_URL }}
+      PRODUCTION_WEB_BASE_URL: ${{ vars.PRODUCTION_WEB_BASE_URL }}
+      PRODUCTION_SMOKE_USERNAME: ${{ vars.PRODUCTION_SMOKE_USERNAME }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          version: "0.12.9"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Require complete release configuration before deployment
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_ADMIN_URL }}
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          PRODUCTION_SMOKE_PASSWORD: ${{ secrets.PRODUCTION_SMOKE_PASSWORD }}
+        run: |
+          for key in DATABASE_URL RENDER_DEPLOY_HOOK VERCEL_TOKEN PRODUCTION_SMOKE_PASSWORD PRODUCTION_API_BASE_URL PRODUCTION_WEB_BASE_URL PRODUCTION_SMOKE_USERNAME VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            test -n "${!key}" || { echo "Missing required configuration: $key" >&2; exit 1; }
+          done
+      - name: Install locked verification dependencies
+        run: uv sync --locked --no-dev
+      - name: Validate deployment contracts
+        run: uv run --locked --no-dev --no-sync python -m backend.scripts.validate_deployment
+      - name: Verify existing Prisma schema read-only; never migrate during startup
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_ADMIN_URL }}
+          LMS_ENVIRONMENT: production
+        run: |
+          uv run --locked --no-dev --no-sync python -m backend.scripts.database verify \
+            --provider prisma --environment production --confirm-production --require-administrator
+      - name: Trigger exact-commit Render deployment
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          separator="?"
+          [[ "$RENDER_DEPLOY_HOOK" == *"?"* ]] && separator="&"
+          curl --fail --silent --show-error --request POST \
+            "${RENDER_DEPLOY_HOOK}${separator}ref=${DEPLOY_SHA}" \
+            --output "$RUNNER_TEMP/render-deploy.json"
+          jq -r '"Render deploy: " + (.deploy.id // .id // "accepted")' "$RUNNER_TEMP/render-deploy.json"
+      - name: Wait for readiness of this exact production revision
+        run: |
+          for ((attempt = 1; attempt <= 90; attempt++)); do
+            if curl --fail --silent --max-time 10 "${PRODUCTION_API_BASE_URL}/health/ready" \
+              --output "$RUNNER_TEMP/ready.json" && \
+              jq -e --arg sha "$DEPLOY_SHA" '.status == "ready" and .environment == "production" and .revision == $sha' "$RUNNER_TEMP/ready.json" >/dev/null; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "The exact backend revision did not become ready." >&2
+          exit 1
+      - name: Install locked dashboard dependencies and select pinned CLI
+        run: |
+          npm ci --prefix frontend
+          echo "VERCEL_CLI_VERSION=$(node -p "require('./deploy/cloud-toolchain.json').vercel")" >> "$GITHUB_ENV"
+      - name: Pull production Vercel configuration
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes "vercel@$VERCEL_CLI_VERSION" pull --yes --environment=production --scope "$VERCEL_ORG_ID"
+      - name: Build the checked-out production dashboard
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          BACKEND_API_URL: ${{ vars.PRODUCTION_API_BASE_URL }}
+          APP_ORIGIN: ${{ vars.PRODUCTION_WEB_BASE_URL }}
+          NEXT_PUBLIC_API_BASE_URL: ""
+        run: npx --yes "vercel@$VERCEL_CLI_VERSION" build --prod --scope "$VERCEL_ORG_ID"
+      - name: Deploy prebuilt dashboard without rebuilding a different revision
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npx --yes "vercel@$VERCEL_CLI_VERSION" deploy --prebuilt --prod --scope "$VERCEL_ORG_ID" \
+            --env "BACKEND_API_URL=$PRODUCTION_API_BASE_URL" --env "NEXT_PUBLIC_API_BASE_URL=" \
+            --env "APP_ORIGIN=$PRODUCTION_WEB_BASE_URL" \
+            --meta "githubCommitSha=$DEPLOY_SHA" > "$RUNNER_TEMP/vercel-url.txt"
+      - name: Verify browser-boundary authentication through the same-origin relay
+        env:
+          PRODUCTION_SMOKE_PASSWORD: ${{ secrets.PRODUCTION_SMOKE_PASSWORD }}
+        run: |
+          uv run --locked --no-dev --no-sync python -m backend.scripts.deployment_probe smoke \
+            --api-origin "$PRODUCTION_WEB_BASE_URL" --web-origin "$PRODUCTION_WEB_BASE_URL" \
+            --username-environment PRODUCTION_SMOKE_USERNAME \
+            --password-environment PRODUCTION_SMOKE_PASSWORD --output "$RUNNER_TEMP/smoke.json"
+      - name: Retain redacted release evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: catanova-release-${{ needs.verify.outputs.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ready.json
+            ${{ runner.temp }}/smoke.json
+            ${{ runner.temp }}/vercel-url.txt
+          retention-days: 7
+          if-no-files-found: error

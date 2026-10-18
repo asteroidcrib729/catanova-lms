@@ -1,0 +1,24 @@
+{
+  "provider": "prisma-postgres",
+  "workspace_id": "wksp_d92jyphfrn32hycz9voueezd",
+  "project_id": "proj_p24w3977cbln8cturoydgvbd",
+  "project_name": "catanova-lms",
+  "region": "ap-southeast-1",
+  "schema_verified_date": "2026-10-18",
+  "application_schema_version": 3,
+  "public_cutover_complete": false,
+  "environments": {
+    "production": {
+      "branch": "main",
+      "branch_id": "br_rnj8q66oe8meo3sj0523eysj",
+      "database_id": "db_fp0s0xaloh3qrg8ctkts1ulr",
+      "database_name": "catanova-production"
+    },
+    "development": {
+      "branch": "development",
+      "branch_id": "br_ajvu4gy1cm1tj0oc3tiyv6gg",
+      "database_id": "db_sh3a8vgj08fzh04fw7bzxqtt",
+      "database_name": "catanova-development"
+    }
+  }
+}

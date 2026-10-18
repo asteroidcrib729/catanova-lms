@@ -1,41 +1,34 @@
 [CmdletBinding()]
 param(
-    [switch]$StartDatabase
+    [switch]$StartDatabase,
+    [ValidatePattern('^[A-Za-z0-9_.-]+$')]
+    [string]$EnvFile = '.env.development'
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$python = Join-Path $repositoryRoot ".venv\Scripts\python.exe"
+$uv = (Get-Command uv.exe -ErrorAction SilentlyContinue).Source
 $npm = (Get-Command npm.cmd -ErrorAction SilentlyContinue).Source
 $npx = (Get-Command npx.cmd -ErrorAction SilentlyContinue).Source
 $cliVersionFile = Join-Path $repositoryRoot "supabase\CLI_VERSION"
 
-if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
-    throw "Python virtual environment not found at $python. Follow README.md setup first."
+if (-not $uv) {
+    throw "uv.exe was not found on PATH. Install uv and follow README.md setup first."
 }
-if (-not $npm -or -not $npx) {
-    throw "npm.cmd and npx.cmd must be available on PATH."
-}
-if (-not (Test-Path -LiteralPath $cliVersionFile -PathType Leaf)) {
-    throw "Pinned Supabase CLI version file is missing: $cliVersionFile"
-}
-
-$cliVersion = (Get-Content -LiteralPath $cliVersionFile -Raw).Trim()
-$dockerReady = $false
-try {
-    & docker info *> $null
-    $dockerReady = $LASTEXITCODE -eq 0
-}
-catch {
-    $dockerReady = $false
+if (-not $npm) {
+    throw "npm.cmd must be available on PATH."
 }
 
 if ($StartDatabase) {
-    if (-not $dockerReady) {
-        throw "Docker Desktop's Linux engine is not running. Start Docker Desktop and retry."
+    if ($EnvFile -ne '.env') {
+        throw "-StartDatabase is only for the optional local stack. Add -EnvFile .env; Prisma development needs no Docker."
     }
+    if (-not $npx -or -not (Test-Path -LiteralPath $cliVersionFile -PathType Leaf)) {
+        throw "The optional local stack requires npx.cmd and supabase/CLI_VERSION."
+    }
+    $cliVersion = (Get-Content -LiteralPath $cliVersionFile -Raw).Trim()
     Push-Location $repositoryRoot
     try {
         Write-Host "Starting the repository's local Supabase stack only..." -ForegroundColor Cyan
@@ -48,16 +41,17 @@ if ($StartDatabase) {
         Pop-Location
     }
 }
-elseif (-not $dockerReady) {
-    Write-Warning "Docker Desktop's Linux engine is stopped; local PostgreSQL cannot start yet."
+if (-not (Test-Path -LiteralPath (Join-Path $repositoryRoot $EnvFile) -PathType Leaf)) {
+    throw "Missing $EnvFile. Copy its example and set the correct private database URL first."
 }
-
-$apiCommand = "& '$python' -m library_management.api"
-$webCommand = "Set-Location '$repositoryRoot\web'; & '$npm' run dev"
+$apiEnvironment = "--env-file $EnvFile "
+$apiCommand = "Set-Location '$repositoryRoot'; & '$uv' run --locked ${apiEnvironment}uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log"
+$webCommand = "Set-Location '$repositoryRoot\frontend'; & '$npm' run dev -- --hostname 127.0.0.1"
 
 Write-Host "`nDevelopment prerequisites are valid." -ForegroundColor Green
 Write-Host "Run these commands in two separate PowerShell tabs:" -ForegroundColor Cyan
 Write-Host "  API:       $apiCommand"
 Write-Host "  Dashboard: $webCommand"
-Write-Host "`nUse -StartDatabase to explicitly start the local Supabase stack first."
-Write-Host "This script never links to or modifies a hosted Supabase project."
+Write-Host "`nDefault: Prisma development via .env.development; no Docker required."
+Write-Host "Optional existing WSL/local database: use -EnvFile .env."
+Write-Host "This helper never migrates a database or starts servers automatically."

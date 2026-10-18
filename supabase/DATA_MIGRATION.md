@@ -90,5 +90,6 @@ CI job. It proves command and schema portability on the pinned local PostgreSQL 
 not a production recovery objective. Provider-scale RPO/RTO, encrypted off-provider
 retention, alerting, and scheduled restore frequency must be measured and approved in
 Plans 18-19. Plan 18's provider-specific encryption, storage ownership, retention,
-clean-target rehearsal, and evidence requirements are defined in `deploy/RUNBOOK.md`;
+clean-target rehearsal, and evidence requirements are defined in
+[`DEPLOYMENT.md`](../DEPLOYMENT.md);
 Free Supabase is not treated as an automatic-backup service.
