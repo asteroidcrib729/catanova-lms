@@ -166,6 +166,11 @@ available. Smoke checks sign in/out and verify session security; they do not
 create catalog or circulation records. Keep the Vercel token scoped to the
 intended team/project and keep the Render deploy hook private.
 
+If Vercel rejects the CI token, run `./scripts/set-vercel-ci-token.ps1 -Publish`
+from the repository root in your own terminal. Paste the actual token value at
+the hidden prompt, not its name. The helper checks identity and CataNova project
+access before saving that same value to GitHub production; it never deploys.
+
 In GitHub **Actions → Deploy production → Run workflow**, select `main`, supply
 the full current `main` SHA and confirmation `DEPLOY-PRODUCTION`. The workflow:
 

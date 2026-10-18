@@ -197,9 +197,12 @@ Supabase is still intact; do not delete it yet.
 
 ### Remaining work before public production cutover
 
-1. The owner replaces the rejected Vercel CI token privately in the GitHub
-   production environment. Never read local authentication stores, retrieve
-   existing encrypted CI secrets, or request a token in chat.
+1. The owner verifies the replacement Vercel CI token privately using
+   `scripts/set-vercel-ci-token.ps1 -Publish`. It checks user identity and exact
+   project/team access before writing the production GitHub secret through stdin.
+   Replacement alone did not resolve authentication (release attempt 2 failed).
+   Never read local authentication stores, retrieve existing encrypted CI secrets,
+   or request a token in chat.
 2. Rerun the failed release job for the same reviewed main SHA. Require successful
    Vercel build/deploy and authenticated same-origin smoke checks, then verify the
    actual public browser flow and scoped persistence/role/CSRF/logout behavior.
@@ -277,6 +280,23 @@ Supabase is still intact; do not delete it yet.
   the owner-supplied CI token. CLI environment-token handling was independently
   checked with a deliberately invalid nonsecret value. Requested token replacement
   privately in GitHub, not in chat; do not report the frontend as deployed yet.
+- After the owner replaced VERCEL_TOKEN, retried only the failed job of release
+  39116209370 (attempt 2). The same reviewed main SHA passed its backend gates,
+  but Vercel pull again failed with **User not found (404)** before any dashboard
+  build/deploy. GitHub secret metadata confirmed an update at
+  `2026-10-18T13:15:19Z`. Inspection of the pinned CLI implementation confirmed
+  it explicitly uses VERCEL_TOKEN ahead of its local authentication store. A
+  separate read-only local CLI identity check still resolves the intended team.
+  This narrows the failure to the CI credential path; it does not prove whether
+  the private value, its issuing account, or Vercel token handling is responsible.
+  Added a masked-input owner helper to verify the actual token directly with
+  Vercel and optionally publish that same verified value to the exact GitHub
+  environment. It never prints token values or automatically triggers deployment.
+  PowerShell parsing and four mocked checks passed: accepted identity/project,
+  rejected identity, wrong project/team, and token-name-as-input. Failure checks
+  confirmed provider exception details and the synthetic token were not exposed.
+  Real validation/publication requires the owner's hidden terminal input; it has
+  not been claimed as completed or used to bypass the gated release.
 - New diagnostic validation: 182 unit/API tests passed, 29 PostgreSQL tests
   deselected locally; Ruff passed and Pyrefly reported zero errors. Existing main
   CI provides the separate PostgreSQL gate. Final production browser verification
