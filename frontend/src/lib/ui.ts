@@ -18,7 +18,7 @@ export const ui = {
   textButtonDanger: `${textButton} text-danger`,
   label: "grid gap-[0.42rem] text-[0.86rem] font-[630] text-foreground",
   input:
-    "w-full rounded-[11px] border border-border bg-surface px-[0.8rem] py-[0.72rem] text-foreground",
+    "w-full rounded-[11px] border border-muted bg-surface px-[0.8rem] py-[0.72rem] text-foreground",
   form: "grid gap-4",
   accessCard:
     "grid min-h-[420px] gap-[22px] rounded-3xl border border-border bg-surface p-[clamp(22px,4vw,34px)] shadow-card",

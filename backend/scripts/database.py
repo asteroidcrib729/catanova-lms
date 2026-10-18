@@ -12,7 +12,12 @@ import psycopg
 
 from backend.app.postgres.config import PostgresSettings
 from backend.app.postgres.inspection import reconcile_empty_source, validate_empty_source
-from backend.app.postgres.migrations import MigrationError, initialize_schema, verify_managed_schema
+from backend.app.postgres.migrations import (
+    MIGRATIONS_DIRECTORY,
+    MigrationError,
+    initialize_schema,
+    verify_managed_schema,
+)
 
 
 def main() -> int:
@@ -43,7 +48,6 @@ def main() -> int:
             snapshot = json.loads(content)
             validate_empty_source(snapshot)
             snapshot_hash = hashlib.sha256(content).hexdigest()
-        directory = Path(__file__).resolve().parents[2] / "supabase" / "migrations"
         with (
             psycopg.connect(settings.url, connect_timeout=10) as connection,
             connection.transaction(force_rollback=not arguments.commit),
@@ -59,7 +63,9 @@ def main() -> int:
                     **verify_managed_schema(connection, provider=arguments.provider),
                 }
             else:
-                result = initialize_schema(connection, directory, provider=arguments.provider)
+                result = initialize_schema(
+                    connection, MIGRATIONS_DIRECTORY, provider=arguments.provider
+                )
             if arguments.require_administrator:
                 administrator = connection.execute(
                     "SELECT EXISTS(SELECT 1 FROM lms.users WHERE role='administrator' "

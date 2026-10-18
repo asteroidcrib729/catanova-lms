@@ -116,10 +116,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-      - name: Start local Supabase/PostgreSQL stack
-        run: npx --yes "supabase@$(cat supabase/CLI_VERSION)" start
-      - name: Reset migrations and synthetic seed
-        run: npx --yes "supabase@$(cat supabase/CLI_VERSION)" db reset
+      - name: Start disposable PostgreSQL engine (fixtures apply shared SQL)
+        run: npx --yes "supabase@$(cat database/local/supabase/CLI_VERSION)" start --workdir database/local
       - uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
@@ -132,7 +130,7 @@ jobs:
       - name: PostgreSQL constraints and concurrency
         env:
           LMS_TEST_POSTGRES_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres
-          LMS_TEST_POSTGRES_CONTAINER: supabase_db_library-management-system
+          LMS_TEST_POSTGRES_CONTAINER: supabase_db_catanova-test
         run: uv run --locked --no-sync python -m pytest backend/tests/postgres -q
 
   docs:

@@ -27,6 +27,7 @@ test("completes the labeled sign-in journey and enters the dashboard", async () 
     "aria-selected",
     "true",
   );
+  expect(screen.getByLabelText("Username")).toHaveClass("border-muted");
   fireEvent.change(screen.getByLabelText("Username"), {
     target: { value: "mina.member" },
   });
@@ -57,6 +58,30 @@ test("exposes registration and bootstrap as keyboard-operable tabs", () => {
   expect(
     screen.getByRole("heading", { name: "Create the first administrator" }),
   ).toBeInTheDocument();
+});
+
+test("uses arrow, Home and End keys with roving tab focus and a labeled panel", () => {
+  render(<AccessPortal />);
+  const signIn = screen.getByRole("tab", { name: "Sign in" });
+  signIn.focus();
+  fireEvent.keyDown(signIn, { key: "ArrowRight" });
+  const join = screen.getByRole("tab", { name: "Join" });
+  expect(join).toHaveFocus();
+  expect(join).toHaveAttribute("tabindex", "0");
+  expect(signIn).toHaveAttribute("tabindex", "-1");
+  expect(screen.getByRole("tabpanel", { name: "Join" })).toHaveAttribute(
+    "id",
+    "access-panel",
+  );
+  fireEvent.keyDown(join, { key: "End" });
+  const setup = screen.getByRole("tab", { name: "First setup" });
+  expect(setup).toHaveFocus();
+  fireEvent.keyDown(setup, { key: "ArrowRight" });
+  expect(signIn).toHaveFocus();
+  fireEvent.keyDown(signIn, { key: "ArrowLeft" });
+  expect(setup).toHaveFocus();
+  fireEvent.keyDown(setup, { key: "Home" });
+  expect(signIn).toHaveFocus();
 });
 
 test("uses the same Tailwind card recipe while checking and signed out", () => {

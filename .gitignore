@@ -31,9 +31,9 @@ out/
 *.tsbuildinfo
 npm-debug.log*
 
-# Supabase local state and database artifacts
-supabase/.branches/
-supabase/.temp/
+# Optional local test-stack state and database artifacts
+database/local/supabase/.branches/
+database/local/supabase/.temp/
 *.db
 *.db-shm
 *.db-wal

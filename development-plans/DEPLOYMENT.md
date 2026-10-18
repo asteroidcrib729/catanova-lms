@@ -75,7 +75,7 @@ The obsolete WSL `.env` and local stack were deleted at the owner's request.
 
 ## 3. Schema management and security
 
-Historical SQL remains unchanged in `supabase/migrations`. Do not run Supabase
+Historical SQL remains unchanged in `database/migrations`. Do not run Supabase
 migrations against Prisma. The reviewed adapter pins checksums and verifies
 permissions before commit; API startup never migrates the schema.
 
@@ -240,3 +240,6 @@ The legacy WSL stack and volume, SQLite CLI data and legacy text data are delete
 Use Prisma development through `.env.development`; Docker is not needed for
 preview. Retained historical SQL is still required by the Prisma migration adapter
 and disposable CI tests. Do not delete migration source files with old data.
+Shared SQL and runbooks now live under [`database/`](../database/README.md).
+The optional local engine configuration is isolated under `database/local/supabase/`;
+it is not connected to a hosted Supabase project and never auto-applies application SQL.

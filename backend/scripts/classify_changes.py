@@ -76,7 +76,8 @@ def classify_paths(paths: Iterable[str]) -> Selection:
             selection["contract"] = True
             selection["backend"] = True
             selection["frontend"] = True
-        elif path.startswith("supabase/"):
+        # Keep the old prefix to classify deleted paths during the directory move.
+        elif path.startswith(("database/", "supabase/")) and not path.endswith(".md"):
             selection["database"] = True
             selection["backend"] = True
         elif path.startswith("frontend/"):

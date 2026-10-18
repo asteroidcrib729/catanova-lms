@@ -104,8 +104,30 @@ export function AccessPortal() {
             key={item}
             type="button"
             role="tab"
+            id={`access-tab-${item}`}
+            aria-controls="access-panel"
+            tabIndex={mode === item ? 0 : -1}
             className="rounded-[9px] border-0 bg-transparent p-2 text-[0.8rem] font-[680] text-muted aria-selected:bg-surface aria-selected:text-foreground aria-selected:shadow-[0_2px_8px_rgb(0_0_0/7%)]"
             aria-selected={mode === item}
+            onKeyDown={(event) => {
+              const index = modes.indexOf(item);
+              const next =
+                event.key === "ArrowRight"
+                  ? modes[(index + 1) % modes.length]
+                  : event.key === "ArrowLeft"
+                    ? modes[(index + modes.length - 1) % modes.length]
+                    : event.key === "Home"
+                      ? modes[0]
+                      : event.key === "End"
+                        ? modes[modes.length - 1]
+                        : undefined;
+              if (!next) return;
+              event.preventDefault();
+              setMode(next);
+              setError(undefined);
+              setSuccess(undefined);
+              document.getElementById(`access-tab-${next}`)?.focus();
+            }}
             onClick={() => {
               setMode(item);
               setError(undefined);
@@ -120,98 +142,107 @@ export function AccessPortal() {
           </button>
         ))}
       </div>
-      <div>
-        <p className={ui.eyebrow}>
-          {mode === "bootstrap" ? "One-time setup" : "Your CataNova workspace"}
-        </p>
-        <h2
-          id="access-title"
-          className="text-[clamp(1.7rem,4vw,2.4rem)] font-semibold tracking-[-0.045em]"
-        >
-          {mode === "login"
-            ? "Welcome back"
-            : mode === "register"
-              ? "Create your membership"
-              : "Create the first administrator"}
-        </h2>
-        <p className="mt-3 text-[0.82rem] leading-[1.65] text-muted">
-          {mode === "login"
-            ? "Your collection, your community, your next discovery."
-            : mode === "register"
-              ? "A whole world of reading starts with your membership."
-              : "Give your library its first CataNova administrator."}
-        </p>
-      </div>
-      <form
-        className={ui.form}
-        onSubmit={submit}
-        aria-describedby="form-notice"
+      <div
+        id="access-panel"
+        role="tabpanel"
+        aria-labelledby={`access-tab-${mode}`}
+        className="grid gap-[22px]"
       >
-        {mode !== "login" ? (
+        <div>
+          <p className={ui.eyebrow}>
+            {mode === "bootstrap"
+              ? "One-time setup"
+              : "Your CataNova workspace"}
+          </p>
+          <h2
+            id="access-title"
+            className="text-[clamp(1.7rem,4vw,2.4rem)] font-semibold tracking-[-0.045em]"
+          >
+            {mode === "login"
+              ? "Welcome back"
+              : mode === "register"
+                ? "Create your membership"
+                : "Create the first administrator"}
+          </h2>
+          <p className="mt-3 text-[0.82rem] leading-[1.65] text-muted">
+            {mode === "login"
+              ? "Your collection, your community, your next discovery."
+              : mode === "register"
+                ? "A whole world of reading starts with your membership."
+                : "Give your library its first CataNova administrator."}
+          </p>
+        </div>
+        <form
+          className={ui.form}
+          onSubmit={submit}
+          aria-describedby="form-notice"
+        >
+          {mode !== "login" ? (
+            <label className={ui.label}>
+              Display name
+              <input
+                className={ui.input}
+                name="displayName"
+                autoComplete="name"
+                required
+                maxLength={100}
+              />
+            </label>
+          ) : null}
           <label className={ui.label}>
-            Display name
+            Username
             <input
               className={ui.input}
-              name="displayName"
-              autoComplete="name"
+              name="username"
+              autoComplete="username"
               required
-              maxLength={100}
+              minLength={3}
+              maxLength={32}
             />
           </label>
-        ) : null}
-        <label className={ui.label}>
-          Username
-          <input
-            className={ui.input}
-            name="username"
-            autoComplete="username"
-            required
-            minLength={3}
-            maxLength={32}
-          />
-        </label>
-        <label className={ui.label}>
-          Password
-          <input
-            className={ui.input}
-            name="password"
-            type="password"
-            autoComplete={
-              mode === "login" ? "current-password" : "new-password"
-            }
-            required
-            minLength={mode === "login" ? 1 : 12}
-            maxLength={128}
-          />
-        </label>
-        <button className={`${ui.button} ${ui.primary}`} disabled={pending}>
-          {pending
-            ? "Please wait…"
-            : mode === "login"
-              ? "Enter dashboard"
-              : mode === "register"
-                ? "Create membership"
-                : "Create administrator"}
-        </button>
-        <div id="form-notice" aria-live="polite">
-          {error ? <p className={ui.noticeError}>{error}</p> : null}
-          {success ? <p className={ui.noticeSuccess}>{success}</p> : null}
-          {session.phase === "unavailable" ? (
-            <div className={ui.noticeError}>
-              <span>
-                {session.error?.message ?? "The service is not available."}
-              </span>
-              <button
-                className={ui.noticeAction}
-                type="button"
-                onClick={session.refresh}
-              >
-                Check again
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </form>
+          <label className={ui.label}>
+            Password
+            <input
+              className={ui.input}
+              name="password"
+              type="password"
+              autoComplete={
+                mode === "login" ? "current-password" : "new-password"
+              }
+              required
+              minLength={mode === "login" ? 1 : 12}
+              maxLength={128}
+            />
+          </label>
+          <button className={`${ui.button} ${ui.primary}`} disabled={pending}>
+            {pending
+              ? "Please wait…"
+              : mode === "login"
+                ? "Enter dashboard"
+                : mode === "register"
+                  ? "Create membership"
+                  : "Create administrator"}
+          </button>
+          <div id="form-notice" aria-live="polite">
+            {error ? <p className={ui.noticeError}>{error}</p> : null}
+            {success ? <p className={ui.noticeSuccess}>{success}</p> : null}
+            {session.phase === "unavailable" ? (
+              <div className={ui.noticeError}>
+                <span>
+                  {session.error?.message ?? "The service is not available."}
+                </span>
+                <button
+                  className={ui.noticeAction}
+                  type="button"
+                  onClick={session.refresh}
+                >
+                  Check again
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </form>
+      </div>
     </section>
   );
 }

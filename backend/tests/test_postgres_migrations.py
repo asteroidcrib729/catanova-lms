@@ -1,10 +1,13 @@
-from pathlib import Path
-
 import pytest
 
-from backend.app.postgres.migrations import MIGRATIONS, MigrationError, migration_sql
+from backend.app.postgres.migrations import (
+    MIGRATIONS,
+    MIGRATIONS_DIRECTORY,
+    MigrationError,
+    migration_sql,
+)
 
-DIRECTORY = Path(__file__).resolve().parents[2] / "supabase" / "migrations"
+DIRECTORY = MIGRATIONS_DIRECTORY
 
 
 @pytest.mark.parametrize("name,digest", MIGRATIONS)

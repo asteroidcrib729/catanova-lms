@@ -9,6 +9,8 @@ from typing import Any
 from psycopg import Connection
 from psycopg.rows import dict_row
 
+MIGRATIONS_DIRECTORY = Path(__file__).resolve().parents[3] / "database" / "migrations"
+
 MIGRATIONS = (
     (
         "20260905000100_initial_lms.sql",

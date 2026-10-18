@@ -2,7 +2,7 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "library-management-system"
+project_id = "catanova-test"
 
 [api]
 enabled = false
@@ -57,20 +57,21 @@ max_client_conn = 20
 
 [db.migrations]
 # If disabled, migrations will be skipped during a db push or reset.
-enabled = true
+# Shared SQL lives in database/migrations and is applied by Python, not this CLI.
+enabled = false
 # Specifies an ordered list of schema files, directories, or glob patterns that describe your database.
 # Supports paths relative to supabase directory: "./schemas/*.sql", "./database".
 schema_paths = []
 
 [db.seed]
 # If enabled, seeds the database after migrations during a db reset.
-enabled = true
+enabled = false
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 sql_paths = ["./seed.sql"]
 
 [db.network_restrictions]
-# Keep the development database bound to the local machine.
+# Client CIDR policy; this does not change Docker's published-port bind address.
 enabled = true
 # List of IPv4 CIDR blocks allowed to connect to the database.
 # Defaults to allow all IPv4 connections. Set empty array to block all IPs.

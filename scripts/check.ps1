@@ -34,7 +34,7 @@ if ($Postgres -and -not $env:LMS_TEST_POSTGRES_ADMIN_URL) {
     throw "Set LMS_TEST_POSTGRES_ADMIN_URL to the loopback admin database before -Postgres."
 }
 if ($Postgres -and -not $env:LMS_TEST_POSTGRES_CONTAINER) {
-    $env:LMS_TEST_POSTGRES_CONTAINER = "supabase_db_library-management-system"
+    $env:LMS_TEST_POSTGRES_CONTAINER = "supabase_db_catanova-test"
 }
 
 Push-Location $repositoryRoot
