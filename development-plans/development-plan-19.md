@@ -2,8 +2,9 @@
 
 Started: 2026-10-18. Status: database migration and Prisma-backed local preview
 verified; same-origin HTTPS authentication and production release tooling
-implemented. Delivery to `pre-production` is owner-authorized. Manual PR merge,
-owner administrator setup, hosting connections and public cutover remain pending.
+implemented. PR #2 is merged; the production administrator, hosting connections,
+verified Render readiness and encrypted backup/restore are complete. Public
+frontend release and final hosted browser verification remain pending.
 Supabase is still intact; do not delete it yet.
 
 ## Execution record
@@ -196,19 +197,90 @@ Supabase is still intact; do not delete it yet.
 
 ### Remaining work before public production cutover
 
-1. Obtain the user's manual PR merge from `pre-production` into `main`.
-   Do not deploy stale source or treat a branch push as a completed public launch.
-2. The owner creates their production administrator via masked local input and
-   verifies it with `database verify --require-administrator`. Never ask for
-   passwords in chat or expose public bootstrap to avoid this step.
-3. Create/connect the correct Render and Vercel hosting projects to GitHub after
-   the merge, configure environment-isolated secrets and canonical APP_ORIGIN,
-   and run the exact-commit release workflow. Verify the public application in
-   a real browser; local HTTPS evidence does not prove hosted deployment.
-4. Recheck source counts immediately before cutover and freeze/drain source writes
-   if any writers or new records appear. Current initialization is not an online
-   replication mechanism and does not preserve hypothetical later source writes.
-5. Only after successful live cutover should the user separately retire Supabase.
+1. The owner replaces the rejected Vercel CI token privately in the GitHub
+   production environment. Never read local authentication stores, retrieve
+   existing encrypted CI secrets, or request a token in chat.
+2. Rerun the failed release job for the same reviewed main SHA. Require successful
+   Vercel build/deploy and authenticated same-origin smoke checks, then verify the
+   actual public browser flow and scoped persistence/role/CSRF/logout behavior.
+3. Recheck source counts before declaring cutover and preserve Supabase. Current
+   initialization is not an online replication mechanism; any unexpected new
+   source records require reconciliation, not deletion or a blind switch.
+4. Deliver execution evidence and owner-command improvements to pre-production;
+   the owner retains control over their manual PR merge. Do not deploy unreviewed
+   follow-up code just to claim the plan is complete.
+5. Only after successful live cutover should the owner separately retire Supabase.
+
+### Hosted execution after the owner's PR merge
+
+- Verified PR #2 merged to main at
+  `dfc1c74ac19c6af9b5b54dcc5653fc081c13d29e`. Stable CI and every selected component
+  job passed, including the actual hosted local-PostgreSQL recovery job.
+- Rechecked Supabase read-only: all eleven business/session tables remain empty,
+  with the original three schema-version rows. No source configuration, grants,
+  records or project lifecycle were changed.
+- Created only CataNova's Vercel project in the previously confirmed team:
+  `prj_jlPOOmpVvFgNu6HeHPZ4SWHKKEUe`, root frontend, Next.js, Node 24, Singapore
+  functions. Git connection to `asteroidcrib729/catanova-lms` succeeded. Automatic
+  Git builds use ignored-build command `exit 0`; reviewed CLI releases remain
+  manual. Production-only APP_ORIGIN and BACKEND_API_URL were configured; no
+  database credential was placed in Vercel. The plugin still returns 403 for this
+  team; its documented fallback succeeds with the CLI's own authenticated session.
+- Created Render `srv-dba9166q1p3s73apgsv0` (`catanova-api`) in My Workspace,
+  Singapore, free native Python/uv, one instance, bounded pool 3, automatic deploy
+  off, exact dashboard origin and `/health/ready`. Provisioned with MCP and CLI
+  using reviewed descriptor settings; it is **not** a Dashboard-managed Blueprint.
+  Do not create duplicate resources or assume a Blueprint sync owns this service.
+  Non-secret hosting identities are recorded in `deploy/hosting-resources.json`.
+- Prepared ignored `.env.production` without revealing its URL. The owner
+  created their administrator through private masked input. First setup initially
+  hit inherited terminal environment overrides and a generic validation failure.
+  Added precise static error messages and field prevalidation, plus four tests
+  proving invalid input never echoes passwords or reaches account creation.
+  Existing terminal variables take precedence over `uv --env-file`; the guide
+  now explicitly clears only the terminal's LMS_ENVIRONMENT and DATABASE_URL.
+- The owner explicitly approved a persistent ordinary member, `catanova.smoke`,
+  for release checks. Generated its password privately and stored it only in
+  GitHub production secrets via stdin. It has no staff or administrator rights.
+  The owner separately approved the privileged production database credential
+  transfer to GitHub production and Render only. GitHub publication succeeded.
+  Safety review rejected a proposed stdout-mediated Render transfer; no secret
+  was displayed and no alternate extraction was attempted. The owner instead
+  set DATABASE_URL privately in Render. The source is still untouched.
+- Created GitHub environment production with a selected-branch policy allowing
+  **main only**, its six non-secret release/backup variables and the required
+  protected secrets. No existing branch-protection rules were weakened.
+- Completed a real encrypted production backup/decryption/restore rehearsal.
+  pg_dump/pg_restore 17.6 ran through the existing WSL Docker container, not
+  Docker Desktop. Credentials stayed in process environment, not argv. The target
+  was a new UUID-named loopback database only; it was dropped after verification.
+  All twelve application-table row digests matched, including the two approved
+  production accounts; all three private ledger rows and twelve RLS tables passed.
+  No original local database, production table or sequence was reset.
+- The local encrypted archive is
+  `catanova-production-20261018T093653Z.dump.age`, SHA-256
+  `4aaab8fe9b507185ab30ad07f1680d1abbb187ce49354a2c4e84e06cf9facaeb`.
+  Archives/evidence remain ignored under `.dev-processes/recovery/`; plaintext
+  temporary archives were removed. The age identity is restricted to the current
+  Windows account. Its public recipient alone is in BACKUP_AGE_RECIPIENT. The
+  owner should retain the identity separately and copy encrypted backups off-machine.
+- The actual **Backup production** workflow succeeded:
+  [run 39116166928](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39116166928).
+  Downloaded encrypted artifact 12132087904 and verified its SHA-256 locally.
+  This is real hosted backup evidence, in addition to the disposable restore drill.
+- The production release workflow
+  [run 39116209370](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39116209370)
+  passed exact-main/CI, configuration and read-only Prisma/administrator gates.
+  Its deploy hook released Render deploy `dep-dba980qjnfac73erghsg`; public
+  `/health/ready` returned 200, production, PostgreSQL ready and the exact main SHA.
+  The next boundary failed: Vercel CLI pull returned **User not found (404)** for
+  the owner-supplied CI token. CLI environment-token handling was independently
+  checked with a deliberately invalid nonsecret value. Requested token replacement
+  privately in GitHub, not in chat; do not report the frontend as deployed yet.
+- New diagnostic validation: 182 unit/API tests passed, 29 PostgreSQL tests
+  deselected locally; Ruff passed and Pyrefly reported zero errors. Existing main
+  CI provides the separate PostgreSQL gate. Final production browser verification
+  remains required after Vercel authentication and the gated release succeed.
 
 ## Permission compatibility investigation — retained findings
 

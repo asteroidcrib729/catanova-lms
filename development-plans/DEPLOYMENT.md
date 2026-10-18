@@ -105,6 +105,8 @@ and enter the **production direct PostgreSQL URL**. Never paste it into chat.
 Then run:
 
 ```powershell
+# Existing terminal variables take priority over uv's env file.
+Remove-Item Env:LMS_ENVIRONMENT, Env:DATABASE_URL -ErrorAction SilentlyContinue
 uv run --locked --env-file .env.production python -m backend.scripts.database verify --provider prisma --environment production --confirm-production
 uv run --locked --env-file .env.production python -m backend.scripts.bootstrap_administrator --environment production --confirm-production
 uv run --locked --env-file .env.production python -m backend.scripts.database verify --provider prisma --environment production --confirm-production --require-administrator
@@ -117,17 +119,21 @@ or restore over these already initialized databases.
 
 ## 5. Connect hosting after the reviewed PR merge
 
-Hosting resources have **not** been created. First merge `pre-production` into
-`main` through your manually reviewed PR and require successful CI on that exact
-`main` commit. Do not deploy the old `main` or enable automatic releases.
+The owner merged PR #2; stable CI passed for `dfc1c74`. Hosting resources are now
+created and Git-connected (identities in
+[`deploy/hosting-resources.json`](../deploy/hosting-resources.json)). Backend:
+`https://catanova-api.onrender.com`; dashboard: `https://catanova-lms.vercel.app`.
+Resource creation alone is not a verified public release. Keep automatic releases
+disabled and use the gate below. The following records the setup for recreation:
 
 1. Reserve the Vercel project `catanova-lms` in the confirmed account. Connect
    `asteroidcrib729/catanova-lms`, branch `main`, root `frontend`,
    Node 24, install `npm ci`, build `npm run build`. Keep Git-triggered automatic
    deployments disabled so releases use the gate below. Note its canonical HTTPS
    production origin; this becomes `APP_ORIGIN`.
-2. In Render **My Workspace**, create the Blueprint from the same repository's
-   `main` and root `render.yaml`. It selects **Singapore**, free Python/uv,
+2. Use the existing Render **My Workspace** service, created with MCP/CLI from
+   the reviewed `render.yaml` settings (not a managed Blueprint). Do not create a
+   duplicate Blueprint/service. It selects **Singapore**, free Python/uv,
    one instance, pool maximum 3, and `/health/ready`. Automatic deployment stays
    off. Supply the production `DATABASE_URL` and set `LMS_ALLOWED_ORIGINS` to
    the **exact Vercel production origin** (no path or trailing slash).
@@ -180,6 +186,15 @@ run **Backup production** with `BACKUP-PRODUCTION`. It encrypts a PostgreSQL 17 
 `catanova_admin`; retain the decryption identity separately and copy backups to
 private off-provider storage. Seven-day artifacts alone are not a retention
 policy or evidence of a successful restore drill.
+
+An encrypted production backup and actual local disposable restore rehearsal
+passed on 2026-10-18: all 12 application-table row digests, three private ledger
+rows and RLS checks matched. The encrypted archive/checksum and redacted evidence
+are ignored under `.dev-processes/recovery/`. Its decryption identity is in
+`production-age-key.txt`, restricted to the current Windows account. Store that
+identity separately in a private password manager/offline location, and keep a
+separate encrypted backup copy off this computer. Never upload the identity to
+GitHub. `BACKUP_AGE_RECIPIENT` contains only the public encryption recipient.
 
 See [development-plan-19.md](development-plan-19.md) for evidence and remaining work.
 
