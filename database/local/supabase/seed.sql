@@ -1,0 +1,3 @@
+-- Intentionally unused: db.seed.enabled is false in this optional test stack.
+-- Python test fixtures create synthetic data in disposable lms_test_* databases.
+-- Never place production or copied genuine-user data here.

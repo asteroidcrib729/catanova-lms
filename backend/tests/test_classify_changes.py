@@ -24,8 +24,17 @@ def test_contract_change_fans_out_to_producer_and_consumer() -> None:
     assert selection["database"] is False
 
 
-def test_database_change_also_checks_backend() -> None:
-    selection = classify_paths(["supabase/config.toml"])
+@pytest.mark.parametrize(
+    "path",
+    (
+        "database/migrations/20260905000100_initial_lms.sql",
+        "database/local/supabase/config.toml",
+        "database/local/supabase/CLI_VERSION",
+        "supabase/config.toml",
+    ),
+)
+def test_database_change_also_checks_backend(path: str) -> None:
+    selection = classify_paths([path])
     assert selection["database"] is True
     assert selection["backend"] is True
 
@@ -44,7 +53,9 @@ def test_exporter_change_checks_api_contract_and_frontend() -> None:
 
 
 def test_docs_only_change_does_not_start_code_checks() -> None:
-    assert classify_paths(["README.md", "development-plans/development-plan-12.md"]) == {
+    assert classify_paths(
+        ["README.md", "development-plans/development-plan-12.md", "database/MIGRATIONS.md"]
+    ) == {
         "backend": False,
         "database": False,
         "contract": False,

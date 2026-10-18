@@ -16,7 +16,6 @@ export function BrandLogo({
     <Link
       className={`inline-flex items-center gap-[11px] text-[1.45rem] font-[760] tracking-[-0.04em] text-foreground no-underline ${responsive ? "max-[760px]:gap-2 max-[760px]:text-[1.2rem]" : ""} ${className}`}
       href="/"
-      aria-label="CataNova home"
     >
       <Image
         className={`size-11 shrink-0 ${responsive ? "max-[760px]:size-9" : ""}`}
@@ -34,10 +33,12 @@ export function BrandLogo({
           <span
             className={`text-[0.58rem] font-medium tracking-[0.015em] whitespace-nowrap text-muted ${responsive ? "max-[760px]:hidden" : ""}`}
           >
+            {" "}
             {BRAND_TAGLINE}
           </span>
         ) : null}
       </span>
+      <span className="sr-only"> home</span>
     </Link>
   );
 }

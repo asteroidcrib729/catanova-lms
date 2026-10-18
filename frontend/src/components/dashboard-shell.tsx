@@ -92,14 +92,20 @@ export function DashboardShell() {
           type="button"
           aria-expanded={menuOpen}
           aria-controls="dashboard-navigation"
+          id="dashboard-menu-toggle"
           onClick={() => setMenuOpen((value) => !value)}
         >
           Menu
         </button>
       </header>
       <aside
-        className={`fixed inset-y-0 left-0 z-20 flex w-[260px] flex-col justify-between border-r border-border bg-surface/97 px-5 pt-[30px] pb-[22px] max-[760px]:top-[69px] max-[760px]:w-[min(86vw,320px)] motion-safe:transition-transform motion-safe:duration-180 ${menuOpen ? "max-[760px]:translate-x-0" : "max-[760px]:-translate-x-[105%]"}`}
+        className={`fixed inset-y-0 left-0 z-20 flex w-[260px] flex-col justify-between border-r border-border bg-surface/97 px-5 pt-[30px] pb-[22px] max-[760px]:top-[69px] max-[760px]:w-[min(86vw,320px)] motion-safe:transition-transform motion-safe:duration-180 ${menuOpen ? "max-[760px]:visible max-[760px]:translate-x-0" : "max-[760px]:invisible max-[760px]:-translate-x-[105%]"}`}
         id="dashboard-navigation"
+        onKeyDown={(event) => {
+          if (event.key !== "Escape") return;
+          setMenuOpen(false);
+          document.getElementById("dashboard-menu-toggle")?.focus();
+        }}
       >
         <div>
           <BrandLogo className="max-[760px]:hidden" />
@@ -116,6 +122,7 @@ export function DashboardShell() {
                 onClick={() => {
                   setSection(item.id);
                   setMenuOpen(false);
+                  document.getElementById("main-content")?.focus();
                 }}
               >
                 {item.label}
@@ -152,6 +159,7 @@ export function DashboardShell() {
         className="ml-[260px] w-[min(1180px,calc(100%-260px))] p-[clamp(32px,6vw,72px)] max-[760px]:m-0 max-[760px]:w-full max-[760px]:px-[18px] max-[760px]:pt-[34px] max-[760px]:pb-[60px]"
         tabIndex={-1}
       >
+        <h1 className="sr-only">Library dashboard</h1>
         <div className="mb-[30px] flex justify-between gap-3.5 border-b border-border pb-[18px] font-mono text-[0.63rem] tracking-[0.02em] text-muted">
           <span>CataNova workspace</span>
           <span className="max-[760px]:hidden">Catalog. Manage. Discover.</span>

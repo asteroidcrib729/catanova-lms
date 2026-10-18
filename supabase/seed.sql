@@ -1,2 +1,0 @@
--- Synthetic local seed data will be added with the PostgreSQL schema in Plan 13.
--- Production or copied genuine-user data must never be placed in this file.

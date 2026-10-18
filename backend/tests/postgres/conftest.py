@@ -2,7 +2,6 @@
 
 import os
 from collections.abc import Iterator
-from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 from uuid import uuid4
 
@@ -12,6 +11,7 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
 from backend.app.postgres import PostgresDatabase, PostgresSettings
+from backend.app.postgres.migrations import MIGRATIONS_DIRECTORY
 
 
 @pytest.fixture(scope="session")
@@ -27,8 +27,7 @@ def pg_url() -> Iterator[str]:
         try:
             connection_string = make_conninfo(admin_url, dbname=name)
             with psycopg.connect(connection_string, autocommit=True) as connection:
-                migrations = Path(__file__).resolve().parents[3] / "supabase" / "migrations"
-                for migration in sorted(migrations.glob("*.sql")):
+                for migration in sorted(MIGRATIONS_DIRECTORY.glob("*.sql")):
                     connection.execute(migration.read_bytes())
             # Keep the URL shape so the application's strict URL validation is exercised.
             parsed = urlsplit(admin_url)
@@ -58,8 +57,7 @@ def migration_database(pg_url: str) -> Iterator[PostgresDatabase]:
         connection_string = urlunsplit(parsed._replace(path="/" + name))
         try:
             with psycopg.connect(connection_string, autocommit=True) as connection:
-                migrations = Path(__file__).resolve().parents[3] / "supabase" / "migrations"
-                for migration in sorted(migrations.glob("*.sql")):
+                for migration in sorted(MIGRATIONS_DIRECTORY.glob("*.sql")):
                     connection.execute(migration.read_bytes())
             database = PostgresDatabase(PostgresSettings(connection_string, environment="test"))
             database.open()

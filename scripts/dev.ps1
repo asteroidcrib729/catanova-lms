@@ -12,7 +12,8 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $uv = (Get-Command uv.exe -ErrorAction SilentlyContinue).Source
 $npm = (Get-Command npm.cmd -ErrorAction SilentlyContinue).Source
 $npx = (Get-Command npx.cmd -ErrorAction SilentlyContinue).Source
-$cliVersionFile = Join-Path $repositoryRoot "supabase\CLI_VERSION"
+$localDatabaseRoot = Join-Path $repositoryRoot "database\local"
+$cliVersionFile = Join-Path $localDatabaseRoot "supabase\CLI_VERSION"
 
 if (-not $uv) {
     throw "uv.exe was not found on PATH. Install uv and follow README.md setup first."
@@ -26,13 +27,13 @@ if ($StartDatabase) {
         throw "-StartDatabase is only for the optional local stack. Add -EnvFile .env; Prisma development needs no Docker."
     }
     if (-not $npx -or -not (Test-Path -LiteralPath $cliVersionFile -PathType Leaf)) {
-        throw "The optional local stack requires npx.cmd and supabase/CLI_VERSION."
+        throw "The optional local stack requires npx.cmd and database/local/supabase/CLI_VERSION."
     }
     $cliVersion = (Get-Content -LiteralPath $cliVersionFile -Raw).Trim()
     Push-Location $repositoryRoot
     try {
         Write-Host "Starting the repository's local Supabase stack only..." -ForegroundColor Cyan
-        & $npx --yes "supabase@$cliVersion" start
+        & $npx --yes "supabase@$cliVersion" start --workdir $localDatabaseRoot
         if ($LASTEXITCODE -ne 0) {
             throw "Local Supabase startup failed with exit code $LASTEXITCODE."
         }
@@ -53,5 +54,9 @@ Write-Host "Run these commands in two separate PowerShell tabs:" -ForegroundColo
 Write-Host "  API:       $apiCommand"
 Write-Host "  Dashboard: $webCommand"
 Write-Host "`nDefault: Prisma development via .env.development; no Docker required."
-Write-Host "Optional existing WSL/local database: use -EnvFile .env."
+if (Test-Path -LiteralPath (Join-Path $repositoryRoot '.env') -PathType Leaf) {
+    Write-Host "Optional separately configured local database: use -EnvFile .env."
+} else {
+    Write-Host "No local/WSL .env is configured; use Prisma development."
+}
 Write-Host "This helper never migrates a database or starts servers automatically."

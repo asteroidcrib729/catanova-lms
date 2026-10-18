@@ -6,7 +6,22 @@
   "region": "ap-southeast-1",
   "schema_verified_date": "2026-10-18",
   "application_schema_version": 3,
-  "public_cutover_complete": false,
+  "public_cutover_complete": true,
+  "public_cutover_verified_date": "2026-10-18",
+  "legacy_local_data_removed_date": "2026-10-18",
+  "current_backup": {
+    "source_revision": "9a5cf1a47eb4cdbe9c39119ba5633bf4e163b45b",
+    "workflow_run": 39140350724,
+    "artifact_id": 12141282814,
+    "archive": "catanova-production-20261018T152510Z.dump.age",
+    "sha256": "741d7324a6509f6cf10b9e2dee65e8379735eaef5f868902b48cb5ba8d2c22aa"
+  },
+  "retired_supabase_source": {
+    "project_ref": "bchhpwjemniojkerozfm",
+    "project_name": "library-management-system",
+    "deleted_date": "2026-10-18",
+    "deletion_verified": true
+  },
   "environments": {
     "production": {
       "branch": "main",

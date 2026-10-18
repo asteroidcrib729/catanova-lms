@@ -1,11 +1,14 @@
 {
   "repository": "https://github.com/asteroidcrib729/catanova-lms",
   "production_branch": "main",
-  "reviewed_commit": "dfc1c74ac19c6af9b5b54dcc5653fc081c13d29e",
-  "public_cutover_verified": false,
+  "reviewed_commit": "9a5cf1a47eb4cdbe9c39119ba5633bf4e163b45b",
+  "public_cutover_verified": true,
+  "verified_date": "2026-10-18",
+  "release_run": "https://github.com/asteroidcrib729/catanova-lms/actions/runs/39136631884",
   "render": {
     "workspace_id": "tea-d1vp90bipnbc73fijk4g",
     "service_id": "srv-dba9166q1p3s73apgsv0",
+    "deployment_id": "dep-dbadid2jnfac73fa6i10",
     "name": "catanova-api",
     "region": "singapore",
     "runtime": "python",
@@ -16,6 +19,7 @@
   "vercel": {
     "team_id": "team_grJesWXYv44pv3DuOPkWPa9z",
     "project_id": "prj_jlPOOmpVvFgNu6HeHPZ4SWHKKEUe",
+    "deployment_id": "dpl_3PEBTkSA5PHyVAM6uLTFyzAD9524",
     "project_name": "catanova-lms",
     "root_directory": "frontend",
     "node_version": "24.x",

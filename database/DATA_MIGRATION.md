@@ -1,8 +1,10 @@
 # SQLite migration and PostgreSQL recovery runbook
 
-This runbook owns synthetic rehearsals until Plan 19 authorizes a final genuine-data
-cutover. Do not point these commands at the working SQLite database directly for import:
-first create a new snapshot, retain the source and snapshot, and run the dry-run gate.
+Plan 19 completed the hosted cutover to Prisma Postgres. The empty Supabase source
+was reconciled and later deleted at the owner's request; this runbook does not
+repeat that cutover. It retains the guarded SQLite import and recovery tools for
+approved fresh-target operations. Do not import directly from a working SQLite
+database: create a snapshot, retain it and its source, then pass the dry-run gate.
 
 ## Preconditions
 
@@ -61,15 +63,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\data-migration
   verify-backup --archive C:\secure-off-provider\lms-20260906.dump --environment test
 ```
 
-The archive is PostgreSQL custom format, limited to `lms`, and excludes ownership and
-ACL bindings so it can be restored by a controlled target owner. The result reports its
+The archive is PostgreSQL custom format, includes `lms` and the private
+`catanova_admin` migration ledger when present, and excludes ownership and ACL
+bindings so it can be restored by a controlled target owner. The result reports its
 size, SHA-256 digest, and restorable-entry count. It is not encrypted by `pg_dump`; the
 storage location must supply encryption and independent access control.
 
 ## Guarded restore drill
 
 Create a new empty PostgreSQL database. Do not apply LMS migrations to it: the archive
-contains the complete `lms` schema and migration markers. Point `DATABASE_URL` at that
+contains the complete `lms` schema and available migration ledger. Point `DATABASE_URL` at that
 new database, verify the archived SHA-256 value, and run:
 
 ```powershell
@@ -77,8 +80,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\data-migration
   restore --archive C:\secure-off-provider\lms-20260906.dump --environment test
 ```
 
-Restore fails closed if `to_regnamespace('lms')` already exists and never drops a schema
-or database. After restoration, verify readiness, per-table reconciliation, RLS, login,
+Restore fails closed if either `lms` or `catanova_admin` already exists and never
+drops a schema or database. After restoration, verify readiness, per-table reconciliation, RLS, login,
 circulation, and reports before declaring recovery successful. Retain the pre-incident
 database until the recovery decision is approved; destructive production restoration
 requires maintenance mode and the Plan 19 data-loss assessment.
@@ -91,5 +94,6 @@ not a production recovery objective. Provider-scale RPO/RTO, encrypted off-provi
 retention, alerting, and scheduled restore frequency must be measured and approved in
 Plans 18-19. Plan 18's provider-specific encryption, storage ownership, retention,
 clean-target rehearsal, and evidence requirements are defined in
-[`DEPLOYMENT.md`](../DEPLOYMENT.md);
-Free Supabase is not treated as an automatic-backup service.
+[`DEPLOYMENT.md`](../development-plans/DEPLOYMENT.md). The protected production
+backup workflow encrypts archives with age; retention and recovery remain operator
+responsibilities. Do not confuse a successful archive listing with a full restore.

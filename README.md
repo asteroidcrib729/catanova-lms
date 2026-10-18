@@ -2,9 +2,9 @@
 
 **Catalog. Manage. Discover.**
 
-CataNova is a connected library workspace for readers and library teams, built as the Python 3.14 revamp of the original C++ project. This monorepo lives in `catanova-lms/`. The legacy source remains under `legacy/`, the FastAPI application and Python CLI under `backend/`, the Next.js dashboard under `frontend/`, and shared PostgreSQL and API contracts under `supabase/` and `contracts/`.
+CataNova is a connected library workspace for readers and library teams, built as the Python 3.14 revamp of the original C++ project. This monorepo lives in `catanova-lms/`. The legacy source remains under `legacy/`, the FastAPI application and Python CLI under `backend/`, the Next.js dashboard under `frontend/`, and shared PostgreSQL and API contracts under `database/` and `contracts/`.
 
-Brand assets and design rules are documented in [BRAND.md](development-plans/BRAND.md). Existing local Supabase container IDs, `lms` database schemas, environment variable names, API routes, session cookies, and GitHub remotes are intentionally preserved. Plan 19 separately provisions Prisma PostgreSQL; branding alone does not migrate data or rename cloud resources.
+Brand assets and design rules are documented in [BRAND.md](development-plans/BRAND.md). The `lms` database schema, environment variable names, API routes and session cookies remain compatible. Plan 19 completed the Prisma Postgres cutover; [Plan 20](development-plans/development-plan-20.md) separates shared database source from optional local test-stack configuration.
 
 ## Repository structure
 
@@ -15,7 +15,8 @@ Brand assets and design rules are documented in [BRAND.md](development-plans/BRA
 | `backend/tests/` | Python unit, integration, API, and repository tests |
 | `contracts/openapi.json` | Deterministic API contract shared with the dashboard |
 | `frontend/` | Next.js 16 App Router dashboard with strict TypeScript, Tailwind CSS 4, and React Compiler |
-| `supabase/` | Pinned, local-only PostgreSQL/Supabase configuration and migration history |
+| `database/migrations/` | Provider-independent, checksum-pinned PostgreSQL history |
+| `database/local/supabase/` | Optional isolated PostgreSQL test-stack configuration, not production hosting |
 | `backend/scripts/` | Contract, deployment validation, migration, and CI classification tools |
 | `scripts/` | Repository-level PowerShell developer workflows |
 | `development-plans/` | Ordered implementation plans using `development-plan-xx.md` names |
@@ -47,20 +48,18 @@ uv run --locked python -m backend.app
 
 The API exposes liveness and database/schema readiness endpoints. With `DATABASE_URL`
 set, lifespan opens a bounded Psycopg pool and readiness verifies schema version 3.
-Without that setting, liveness works and readiness returns 503. PostgreSQL business
-repositories are complete under Plan 14; the CLI intentionally continues to use SQLite
-until the controlled import and cutover work in later plans.
+Without that setting, liveness works and readiness returns 503. The browser API
+uses PostgreSQL; the separate legacy-style CLI continues to use local SQLite.
 
 ```powershell
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-uv run --locked --env-file .env uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
+uv run --locked --env-file .env.development uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
 The API listens at `http://127.0.0.1:8000`; its default allowed dashboard origin is
 `http://localhost:3000`. Run the command from the repository root.
 `backend.app.main:app` is the Weather Glint-style entry point. Configuration
-is read from environment variables; `uv run --env-file .env` explicitly loads the
-root `.env` before starting Uvicorn. A missing local database leaves `/health/ready` at 503 while
+is read from environment variables; `uv run --env-file .env.development` explicitly
+loads the private Prisma development configuration before Uvicorn starts. A missing database leaves `/health/ready` at 503 while
 `/health/live` remains available.
 
 ## Next.js dashboard
@@ -85,15 +84,18 @@ its compiler package locked in `frontend/package-lock.json`.
 
 ### Prisma hosted development
 
-[Plan 19](development-plans/development-plan-19.md) moves hosting to Prisma
+[Plan 19](development-plans/development-plan-19.md) migrated hosting to Prisma
 Postgres, retaining FastAPI and psycopg. Production and development databases
-remain separate. No production cutover is implied by the configuration below.
+remain separate. Public production cutover was verified on 2026-10-18; the
+configuration below connects local preview only to the development database.
 
 Both Prisma schemas have been initialized and reconciled with the empty hosted
 Supabase source. That source contained no accounts, catalog items, or circulation
 records. Existing migration timestamps were preserved. See the concise
 [deployment guide](development-plans/DEPLOYMENT.md) for connection setup and the
-provider's SQL-role limitations. Keep Supabase until public cutover is verified.
+provider's SQL-role limitations. The old hosted Supabase project was deleted on
+2026-10-18 at the owner's request after verified cutover. Obsolete source exports
+and backups were subsequently removed; the latest encrypted production backup remains.
 
 After the development database is provisioned and initialized, copy
 `.env.development.example` to the ignored `.env.development` and set its private
@@ -116,27 +118,29 @@ Pinned cloud CLIs are available through `scripts/cloud.ps1`, for example
 or frontend dependencies. Local project links and credential files are ignored.
 
 Run `.\scripts\dev.ps1` to print both preview commands with `.env.development`.
-Use `-EnvFile .env` only to select the existing local/WSL database explicitly.
+The obsolete WSL `.env` and local stack were removed at the owner's request.
 Prisma development does not need Docker, Supabase CLI, or Prisma ORM.
 
-### Existing local Supabase setup
+### Disposable PostgreSQL testing
 
 Docker Engine in **WSL 2 Ubuntu** is sufficient; Docker Desktop is not required.
-See [the optional WSL database](development-plans/DEPLOYMENT.md#optional-wsl-database), then run these commands **inside Ubuntu**, from the repository:
+The former WSL database and its volume no longer exist. Create the optional
+`catanova-test` stack only when needed for isolated tests; ordinary preview uses
+Prisma. With the pinned native CLI installed, run **inside Ubuntu** from the repository:
 
 ```bash
-sudo supabase start
-sudo supabase migration up --local
+sudo supabase start --workdir database/local
 ```
 
 Keep FastAPI and its Python 3.14 `.venv` in Windows; connect to PostgreSQL at
 `127.0.0.1:55432`. Windows `npx.cmd` and `scripts/dev.ps1 -StartDatabase` do not
 automatically use the Ubuntu Docker socket.
 
-`migration up --local` applies pending schema changes without resetting existing local
-data. `db reset` is reserved for intentionally rebuilding disposable data. Application
-tables live in the private `lms` schema. See `supabase/MIGRATIONS.md` for ownership and
-compatibility rules.
+The CLI supplies PostgreSQL only; automatic migrations and seed replay are disabled.
+Python test fixtures apply the canonical SQL to their own disposable databases.
+Application tables live in the private `lms` schema. See
+[database/README.md](database/README.md) for test commands and
+[database/MIGRATIONS.md](database/MIGRATIONS.md) for ownership and compatibility rules.
 
 The default application pool has zero minimum and five maximum connections, at most
 ten waiting callers, and bounded connection/query/lock timeouts. `.env.example`
@@ -150,7 +154,7 @@ accounts, catalog, circulation, finance, engagement, and insights. Run the API o
 applying PostgreSQL migrations:
 
 ```powershell
-uv run --locked --env-file .env uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
+uv run --locked --env-file .env.development uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
 Login returns an opaque `HttpOnly` session cookie and a CSRF token (also placed in the
@@ -168,7 +172,6 @@ Validate prerequisites and print the API/dashboard commands:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\dev.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\dev.ps1 -StartDatabase
 ```
 
 Run the complete backend, contract, frontend, and production-build gate:
@@ -177,7 +180,7 @@ Run the complete backend, contract, frontend, and production-build gate:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check.ps1
 ```
 
-To include the real PostgreSQL suite after starting Supabase:
+To include the real PostgreSQL suite after starting the optional local test stack:
 
 ```powershell
 $env:LMS_TEST_POSTGRES_ADMIN_URL = 'postgresql://postgres:postgres@127.0.0.1:55432/postgres'
@@ -190,8 +193,11 @@ that database on completion. Without the test URL these tests are explicitly ski
 uses a local owner account; genuine data and hosted databases are outside the test scope.
 The PostgreSQL gate also performs a native custom-format `pg_dump`/`pg_restore` drill
 against a second disposable database. `scripts/check.ps1` uses the local container name
-from `supabase/config.toml`; set `LMS_TEST_POSTGRES_CONTAINER` explicitly if the local
+from `database/local/supabase/config.toml`; set `LMS_TEST_POSTGRES_CONTAINER` explicitly if the local
 Supabase project name differs.
+The recovery test invokes `docker` directly. If Docker is available only inside
+WSL, use the [split Windows/Linux test commands](database/README.md#optional-postgresql-tests)
+instead of the PowerShell `-Postgres` gate; no Docker Desktop is required.
 
 The process-scoped bypass is necessary on hosts that prohibit local `.ps1` files; it does not alter the machine or user execution policy. Use `-SkipFrontendBuild` only for a faster local iteration; the production build remains mandatory before completion. CI uses the same checks and a conservative path classifier, while always reporting one stable `CI` result.
 
@@ -222,10 +228,10 @@ guarded restore. Import is dry-run by default and `--commit` is explicit. It pre
 identifiers, repairs PostgreSQL sequences, compares every table using canonical row
 digests, and reconciles circulation and minor-unit financial totals before commit.
 
-The current milestone is synthetic rehearsal only: do not import the working SQLite
-database or discard any source/backup. Follow the complete preconditions, command order,
+The hosted cutover is complete; do not repeat it or import records into populated
+targets. Follow the complete preconditions, command order,
 credential handling, off-provider storage, rollback contract, and restore checks in
-`supabase/DATA_MIGRATION.md`.
+[`database/DATA_MIGRATION.md`](database/DATA_MIGRATION.md).
 
 For the intended appearance, use Windows Terminal and select a monospace font such as Cascadia Mono or Cascadia Code in the terminal profile used to launch the application. The CLI remains usable when color or Unicode support is unavailable.
 
@@ -267,23 +273,33 @@ Passwords are handled with Argon2id through `argon2-cffi`. Plaintext passwords m
 
 ## Project status
 
-The CLI remains available alongside the role-aware Next.js dashboard and FastAPI
-backend. Plan 19 initialized isolated Prisma development/production databases and
-reconciled the empty Supabase source, preserving its migration timestamps. Local
-real-browser read/write, persistence, concurrency, HTTPS cookies and CSRF checks
-passed. Same-origin API relay and manual exact-commit production release/backup
-workflows are implemented. PR #2 is merged; the owner-created production
-administrator, Git-connected hosting, live Render readiness, encrypted GitHub
-backup and real disposable restore checks are verified. The public frontend
-release is pending the monorepo workflow correction's manual PR merge and final
-hosted browser checks. The team-scoped Vercel CI token is accepted; the dashboard
-domain is `https://catanova.vercel.app`. Supabase is untouched. See Plan 19 for
-current execution evidence.
-The owner-capable Prisma credential does not reproduce isolated runtime SQL roles;
-see Plan 19 before exposing production. Local tests are not public capacity or
-hosted disaster-recovery evidence.
+Plan 19 is complete. [CataNova](https://catanova.vercel.app) runs on Vercel with
+FastAPI on Render and separate production/development Prisma Postgres databases.
+PR #3 released reviewed commit `9a5cf1a`; CI, authenticated release smoke checks
+and real public-Chrome read/write, reload persistence, concurrent retries,
+role/CSRF/origin protections, secure cookies and logout passed. The marked test
+feedback was removed afterward; the dedicated ordinary smoke member remains.
+Encrypted GitHub backup and a real disposable restore drill also passed.
+
+The CLI remains available. The empty Supabase source was reconciled while
+preserving migration timestamps, then its hosted project was deleted at the
+owner's request after successful cutover. Legacy WSL/SQLite/text data and old
+backups were also removed; a fresh encrypted current-production backup is retained.
+The owner-capable Prisma credential does not provide isolated runtime SQL roles,
+and free-tier cold starts still apply. See Plan 19 for evidence, accepted limits
+and ongoing backup/monitoring responsibilities; these checks are not a load test.
+
+## Administrator access
+
+To use administrator features, sign in at <https://catanova.vercel.app> with your
+production administrator credentials. The same `/dashboard` adds **Accounts**
+and staff controls for that role; there is no separate `/admin` login. Sign out
+of an ordinary member account first if necessary. No default password is provided.
 
 ## Deployment readiness
+
+The final verification scope, accessibility fixes, measured results and remaining
+manual-test limits are documented in [Plan 21](development-plans/development-plan-21.md).
 
 Validate the committed provider and secret boundaries without contacting a provider:
 

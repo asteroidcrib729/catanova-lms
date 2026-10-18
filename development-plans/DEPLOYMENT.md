@@ -3,6 +3,10 @@
 Stack: **Prisma Postgres → Render FastAPI → Vercel Next.js**.
 Run PowerShell commands from the repository root; stop on errors.
 
+Production verified on 2026-10-18: <https://catanova.vercel.app>, commit `9a5cf1a`.
+Database, backend, frontend, real-browser writes/security and backup/restore passed.
+The steps below are for connection setup, recreation and future releases.
+
 ## 1. Database connections
 
 The Prisma project `catanova-lms` already contains two Singapore databases:
@@ -13,8 +17,11 @@ The Prisma project `catanova-lms` already contains two Singapore databases:
 | Production | `catanova-production` | `main` | `production` |
 
 Both schemas are initialized. Supabase contained no business records; its three
-migration timestamps were preserved in production. Supabase remains untouched.
-Do not delete it until public application cutover is verified.
+migration timestamps were preserved in production. After verified public cutover,
+the owner authorized deletion of the old hosted Supabase project on 2026-10-18.
+Deletion and continued production health were verified. The owner subsequently
+requested removal of legacy local data and old exports/backups; only the fresh
+current-deployment recovery archive and its decryption identity are retained.
 
 In [Prisma Console](https://console.prisma.io/), select the correct database →
 **Connect to your database**. Use the standard PostgreSQL **direct** URL:
@@ -64,11 +71,11 @@ administrator in development only. Production uses the masked owner command
 below. Synthetic verification accounts are removed afterward.
 
 `.\scripts\dev.ps1` prints both commands. No Docker is needed for Prisma preview.
-The old `.env` still selects the optional WSL database and was not overwritten.
+The obsolete WSL `.env` and local stack were deleted at the owner's request.
 
 ## 3. Schema management and security
 
-Historical SQL remains unchanged in `supabase/migrations`. Do not run Supabase
+Historical SQL remains unchanged in `database/migrations`. Do not run Supabase
 migrations against Prisma. The reviewed adapter pins checksums and verifies
 permissions before commit; API startup never migrates the schema.
 
@@ -117,14 +124,24 @@ Password input is masked; no password belongs in command arguments or Git.
 The one-time setup closes once an administrator exists. Do not rerun initialization
 or restore over these already initialized databases.
 
+### Access administrator features
+
+Open <https://catanova.vercel.app> and sign in with the **production administrator
+username and password created during owner setup**. The role-aware dashboard at
+`/dashboard` automatically includes **Accounts** and staff controls. There is no
+separate `/admin` login or default admin password. If signed in as a member,
+sign out first; registering another account does not grant administrator rights.
+One active production administrator was verified. Forgotten credentials require
+a separate private owner-assisted reset, not rerunning first setup.
+
 ## 5. Connect hosting after the reviewed PR merge
 
-The owner merged PR #2; stable CI passed for `dfc1c74`. Hosting resources are now
+The owner merged PR #3; stable CI and release passed for `9a5cf1a`. Resources are
 created and Git-connected (identities in
 [`deploy/hosting-resources.json`](../deploy/hosting-resources.json)). Backend:
 `https://catanova-api.onrender.com`; dashboard: `https://catanova.vercel.app`.
-Resource creation alone is not a verified public release. Keep automatic releases
-disabled and use the gate below. The following records the setup for recreation:
+Keep automatic releases disabled and use the gate below for future releases.
+The following records the verified setup for recreation:
 
 1. Reserve the Vercel project `catanova-lms` in the confirmed account. Connect
    `asteroidcrib729/catanova-lms`, branch `main`, root `frontend`,
@@ -185,14 +202,14 @@ the full current `main` SHA and confirmation `DEPLOY-PRODUCTION`. The workflow:
 
 The Vercel CLI steps run from the **repository root**. Keep the provider's Root
 Directory set to `frontend`; running the CLI inside frontend applies that path
-twice. The fix is awaiting the owner's pre-production PR merge; after merging,
-wait for CI and start a fresh release for the new main SHA, not an old failed run.
+twice. The correction is merged and verified. For future changes, wait for main
+CI and start a fresh release for the new main SHA, not an old failed run.
 
-Finally verify in a real browser: sign-in, role-restricted writes, reload,
-persistence and logout. Local HTTPS verification passed; public hosting still
-requires this separate check. Recheck/freeze Supabase writes before switching
-users. Keep Supabase until cutover is verified. After new Prisma writes, do not
-switch back without reconciling those writes.
+After each release, verify sign-in, protected writes, reload and logout in a real
+browser. These public checks passed on 2026-10-18, including concurrent retries,
+role/CSRF/origin boundaries and database persistence. The old hosted Supabase
+project is deleted; recovery requires a current backup, not resuming
+that project. Reconcile any new writes before switching databases.
 
 **Backups:** configure `BACKUP_AGE_RECIPIENT` in the same GitHub environment and
 run **Backup production** with `BACKUP-PRODUCTION`. It encrypts a PostgreSQL 17 archive of `lms` and
@@ -200,21 +217,29 @@ run **Backup production** with `BACKUP-PRODUCTION`. It encrypts a PostgreSQL 17 
 private off-provider storage. Seven-day artifacts alone are not a retention
 policy or evidence of a successful restore drill.
 
-An encrypted production backup and actual local disposable restore rehearsal
-passed on 2026-10-18: all 12 application-table row digests, three private ledger
-rows and RLS checks matched. The encrypted archive/checksum and redacted evidence
-are ignored under `.dev-processes/recovery/`. Its decryption identity is in
+An earlier full disposable restore rehearsal passed on 2026-10-18. After the
+owner's cleanup request, old backups/exports and local WSL data were removed.
+The replacement [backup run 39140350724](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39140350724)
+contains the current production revision `9a5cf1a`. Its encrypted archive/checksum
+are retained under `.dev-processes/recovery/current-39140350724/` and in GitHub
+artifact `12141282814`. Checksum, authenticated decryption and PostgreSQL archive
+catalog checks passed; this replacement was not given a new full restore drill.
+No decrypted archive was written to disk. Its decryption identity is in
 `production-age-key.txt`, restricted to the current Windows account. Store that
 identity separately in a private password manager/offline location, and keep a
 separate encrypted backup copy off this computer. Never upload the identity to
 GitHub. `BACKUP_AGE_RECIPIENT` contains only the public encryption recipient.
 
-See [development-plan-19.md](development-plan-19.md) for evidence and remaining work.
+See [development-plan-19.md](development-plan-19.md) for release evidence and
+ongoing operating responsibilities. The free Render service can cold-start;
+do not automatically replay writes when a warm-up request times out.
 
-## Optional WSL database
+## Local database status
 
-Keep existing local Supabase for disposable PostgreSQL tests and local records.
-In Ubuntu, use the existing native CLI and Docker Engine:
-`sudo supabase start`, then `sudo supabase migration up --local`.
-In Windows select `.env` with `.\scripts\dev.ps1 -EnvFile .env`.
-Never reset that database without first preserving local records.
+The legacy WSL stack and volume, SQLite CLI data and legacy text data are deleted.
+Use Prisma development through `.env.development`; Docker is not needed for
+preview. Retained historical SQL is still required by the Prisma migration adapter
+and disposable CI tests. Do not delete migration source files with old data.
+Shared SQL and runbooks now live under [`database/`](../database/README.md).
+The optional local engine configuration is isolated under `database/local/supabase/`;
+it is not connected to a hosted Supabase project and never auto-applies application SQL.
