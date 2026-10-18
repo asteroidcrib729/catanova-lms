@@ -118,13 +118,15 @@ Pinned cloud CLIs are available through `scripts/cloud.ps1`, for example
 or frontend dependencies. Local project links and credential files are ignored.
 
 Run `.\scripts\dev.ps1` to print both preview commands with `.env.development`.
-Use `-EnvFile .env` only to select the existing local/WSL database explicitly.
+The obsolete WSL `.env` and local stack were removed at the owner's request.
 Prisma development does not need Docker, Supabase CLI, or Prisma ORM.
 
-### Existing local Supabase setup
+### Disposable PostgreSQL testing
 
 Docker Engine in **WSL 2 Ubuntu** is sufficient; Docker Desktop is not required.
-See [the optional WSL database](development-plans/DEPLOYMENT.md#optional-wsl-database), then run these commands **inside Ubuntu**, from the repository:
+The former WSL database and its volume no longer exist. Recreate a local stack
+only if needed for isolated database tests; ordinary preview uses Prisma. With
+the native CLI installed, these commands run **inside Ubuntu**, from the repository:
 
 ```bash
 sudo supabase start
@@ -279,10 +281,18 @@ Encrypted GitHub backup and a real disposable restore drill also passed.
 
 The CLI remains available. The empty Supabase source was reconciled while
 preserving migration timestamps, then its hosted project was deleted at the
-owner's request after successful cutover. Local WSL data and backups remain.
+owner's request after successful cutover. Legacy WSL/SQLite/text data and old
+backups were also removed; a fresh encrypted current-production backup is retained.
 The owner-capable Prisma credential does not provide isolated runtime SQL roles,
 and free-tier cold starts still apply. See Plan 19 for evidence, accepted limits
 and ongoing backup/monitoring responsibilities; these checks are not a load test.
+
+## Administrator access
+
+To use administrator features, sign in at <https://catanova.vercel.app> with your
+production administrator credentials. The same `/dashboard` adds **Accounts**
+and staff controls for that role; there is no separate `/admin` login. Sign out
+of an ordinary member account first if necessary. No default password is provided.
 
 ## Deployment readiness
 

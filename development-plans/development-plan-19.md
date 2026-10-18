@@ -7,6 +7,8 @@ commit `9a5cf1a47eb4cdbe9c39119ba5633bf4e163b45b` to Render and Vercel.
 Dashboard: <https://catanova.vercel.app>. After verified cutover, the owner
 separately authorized deletion of the old Supabase project on 2026-10-18;
 deletion and continued production health were verified as recorded below.
+The owner then requested obsolete WSL/local data and old backups be removed;
+that cleanup is verified below, with a fresh current-production backup retained.
 
 ## Chronological execution record
 
@@ -419,6 +421,45 @@ resuming the deleted project; reconcile any writes before a database switch.
   Render/Vercel resources, local WSL data, source extract and encrypted recovery
   archive were not deleted or reset. Confirmed no obsolete local CLI project-ref
   link remained after deletion; local configuration and migrations were retained.
+
+### Owner-authorized obsolete local data and backup cleanup: 2026-10-18
+
+- The owner requested deletion of WSL data and old backups, retaining only data
+  relevant to the latest deployment. Created a replacement encrypted production
+  backup first: [run 39140350724](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39140350724),
+  source revision `9a5cf1a`, artifact `12141282814`, archive
+  `catanova-production-20261018T152510Z.dump.age`, SHA-256
+  `741d7324a6509f6cf10b9e2dee65e8379735eaef5f868902b48cb5ba8d2c22aa`.
+  Downloaded it locally, verified its checksum, authenticated decryption and
+  PostgreSQL custom-archive catalog with both application and ledger schemas.
+  Decrypted bytes stayed in memory, never a plaintext file. The fresh archive was
+  not subjected to a new full restore; the earlier successful drill remains a
+  historical result, not a claim about this replacement archive's row digests.
+- Audited Docker ownership labels and mounts. Only this legacy project used the
+  three containers (database, Kong and pooler) and volume
+  `supabase_db_library-management-system`. Used the supported explicit-project
+  `supabase stop --project-id library-management-system --no-backup` in Ubuntu.
+  Verified no project containers or data volumes remain. No all-project cleanup,
+  Docker image prune, WSL distribution deletion or unrelated service removal ran.
+- Audited and validated exact absolute local targets inside catanova-lms before
+  permanent removal. Deleted 1,301 obsolete files (109,939,159 bytes): old
+  SQLite/CLI history, WSL `.env`/metadata, five legacy runtime text files, Supabase
+  source extract/checksum, old archive copies and obsolete generated test/preview
+  data. No tracked source file was removed. The original C++ source, migrations,
+  current Prisma credential files, production/development env files, current
+  release evidence and fresh backup/key were protected; all twelve protected
+  current files retained their original SHA-256 hashes.
+- Deleted only old GitHub backup artifact `12132087904` after validating its
+  exact run/name and availability of the replacement. Confirmed the old artifact
+  is absent and the new artifact is retained. Kept the encryption identity used
+  by the current backup; deleting it would make that backup unusable.
+- Legacy data/backup deletion is permanent; the fresh archive preserves current
+  production data, not deleted legacy-only records. Historical checksum/restore
+  records above describe copies that have now intentionally been removed.
+- Read-only production inspection confirmed one active administrator. Dashboard
+  source gates Accounts and staff controls by the authenticated administrator
+  role, using the same login and /dashboard route. No password was read, reset,
+  or assigned a default, and public administrator bootstrap remains closed.
 
 ## Permission compatibility investigation — retained findings
 

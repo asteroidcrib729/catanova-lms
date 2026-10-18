@@ -53,5 +53,9 @@ Write-Host "Run these commands in two separate PowerShell tabs:" -ForegroundColo
 Write-Host "  API:       $apiCommand"
 Write-Host "  Dashboard: $webCommand"
 Write-Host "`nDefault: Prisma development via .env.development; no Docker required."
-Write-Host "Optional existing WSL/local database: use -EnvFile .env."
+if (Test-Path -LiteralPath (Join-Path $repositoryRoot '.env') -PathType Leaf) {
+    Write-Host "Optional separately configured local database: use -EnvFile .env."
+} else {
+    Write-Host "No local/WSL .env is configured; use Prisma development."
+}
 Write-Host "This helper never migrates a database or starts servers automatically."
