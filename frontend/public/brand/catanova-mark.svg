@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">CataNova</title>
+  <desc id="desc">An open catalog book inside a C-shaped orbit, illuminated by a four-point nova star.</desc>
+  <rect width="64" height="64" rx="18" fill="#152B29"/>
+  <path d="M25 11a23 23 0 1 0 29 29" stroke="#73978A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M14 23c6-1 12 1 17 5v23c-5-4-11-6-17-5V23Z" fill="#F5F4EC"/>
+  <path d="M35 28c4-3 9-5 15-5v23c-6 0-11 2-15 5V28Z" fill="#C8EE83"/>
+  <path d="M19 30c3 0 5 1 8 3m-8 4c3 0 5 1 8 3" stroke="#152B29" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="m48 8 2.4 6.6L57 17l-6.6 2.4L48 26l-2.4-6.6L39 17l6.6-2.4L48 8Z" fill="#C8EE83" stroke="#152B29" stroke-width="2" stroke-linejoin="round"/>
+</svg>

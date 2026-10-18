@@ -3,9 +3,9 @@ requires = ["setuptools>=80"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "library-management-system"
+name = "catanova-lms"
 version = "0.1.0"
-description = "A modular, object-oriented library management system."
+description = "CataNova — Catalog. Manage. Discover. A modular library workspace."
 readme = "README.md"
 requires-python = ">=3.14,<3.15"
 dependencies = [
@@ -18,8 +18,8 @@ dependencies = [
     "uvicorn>=0.52.4,<0.53.0",
 ]
 
-[project.optional-dependencies]
-development = [
+[dependency-groups]
+dev = [
     "httpx2>=2.12.0,<3.0",
     "pyrefly>=1.2.0,<2.0",
     "pytest>=8.4.1,<10.0",
@@ -27,26 +27,29 @@ development = [
 ]
 
 [project.scripts]
-lms = "library_management.main:main"
-lms-api = "library_management.api.__main__:main"
+lms = "backend.app.cli.main:main"
+lms-api = "backend.app.api.__main__:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["backend", "backend.app*", "backend.scripts*"]
+namespaces = false
 
 [tool.pytest.ini_options]
 addopts = "-ra"
-testpaths = ["tests"]
+testpaths = ["backend/tests"]
 markers = ["postgres: requires an explicitly configured disposable PostgreSQL test database"]
 
 [tool.pyrefly]
-project-includes = ["src", "tests", "scripts"]
-search-path = ["src", "."]
+project-includes = ["backend/app", "backend/tests", "backend/scripts"]
+search-path = ["."]
 python-version = "3.14"
 preset = "strict"
 
 [tool.ruff]
 line-length = 100
 target-version = "py314"
+src = ["."]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

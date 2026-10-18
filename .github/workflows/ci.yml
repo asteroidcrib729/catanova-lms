@@ -34,9 +34,9 @@ jobs:
         shell: bash
         run: |
           if [[ -n "$BASE_SHA" && -n "$HEAD_SHA" ]]; then
-            python scripts/classify_changes.py --base "$BASE_SHA" --head "$HEAD_SHA" --github-output "$GITHUB_OUTPUT"
+            python -m backend.scripts.classify_changes --base "$BASE_SHA" --head "$HEAD_SHA" --github-output "$GITHUB_OUTPUT"
           else
-            python scripts/classify_changes.py --github-output "$GITHUB_OUTPUT"
+            python -m backend.scripts.classify_changes --github-output "$GITHUB_OUTPUT"
           fi
 
   backend:
@@ -48,15 +48,19 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.14"
-          cache: pip
-      - run: python -m pip install --requirement requirements.txt --editable .
-      - run: python -m ruff check .
-      - run: python -m ruff format --check .
-      - run: python -m pytest
-      - run: python -m pyrefly check
-      - run: python -m scripts.export_openapi --check
-      - run: python -m scripts.validate_deployment
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          version: "0.12.9"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --locked
+      - run: uv run --locked --no-sync ruff check .
+      - run: uv run --locked --no-sync ruff format --check .
+      - run: uv run --locked --no-sync python -m pytest
+      - run: uv run --locked --no-sync pyrefly check
+      - run: uv run --locked --no-sync python -m backend.scripts.export_openapi --check
+      - run: uv run --locked --no-sync python -m backend.scripts.validate_deployment
 
   contract:
     name: API contract
@@ -67,19 +71,23 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.14"
-          cache: pip
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          version: "0.12.9"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: python -m pip install --requirement requirements.txt --editable .
-      - run: python -m scripts.export_openapi --check
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --locked
+      - run: uv run --locked --no-sync python -m backend.scripts.export_openapi --check
       - run: npm ci
-        working-directory: web
+        working-directory: frontend
       - run: npm run check:api
-        working-directory: web
+        working-directory: frontend
 
   frontend:
     name: Next.js frontend
@@ -92,11 +100,11 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-        working-directory: web
+        working-directory: frontend
       - run: npm run check
-        working-directory: web
+        working-directory: frontend
 
   database:
     name: Local PostgreSQL
@@ -109,19 +117,23 @@ jobs:
         with:
           node-version: "24"
       - name: Start local Supabase/PostgreSQL stack
-        run: npx --yes supabase@$(cat supabase/CLI_VERSION) start
+        run: npx --yes "supabase@$(cat supabase/CLI_VERSION)" start
       - name: Reset migrations and synthetic seed
-        run: npx --yes supabase@$(cat supabase/CLI_VERSION) db reset
+        run: npx --yes "supabase@$(cat supabase/CLI_VERSION)" db reset
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.14"
-          cache: pip
-      - run: python -m pip install --requirement requirements.txt --editable .
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          version: "0.12.9"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --locked
       - name: PostgreSQL constraints and concurrency
         env:
           LMS_TEST_POSTGRES_ADMIN_URL: postgresql://postgres:postgres@127.0.0.1:55432/postgres
           LMS_TEST_POSTGRES_CONTAINER: supabase_db_library-management-system
-        run: python -m pytest tests/postgres -q
+        run: uv run --locked --no-sync python -m pytest backend/tests/postgres -q
 
   docs:
     name: Documentation hygiene
@@ -133,7 +145,7 @@ jobs:
       - name: Verify plan naming and whitespace
         shell: pwsh
         run: |
-          $invalid = Get-ChildItem development-plans -File | Where-Object Name -NotMatch '^development-plan-\d{2}\.md$'
+          $invalid = Get-ChildItem development-plans -File | Where-Object { $_.Name -notin @('BRAND.md', 'DEPLOYMENT.md') -and $_.Name -notmatch '^development-plan-\d{2}\.md$' }
           if ($invalid) { throw "Invalid development plan filename: $($invalid.Name -join ', ')" }
           git diff-tree --check --root HEAD
 

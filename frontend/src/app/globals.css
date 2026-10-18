@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* Global CSS owns brand tokens only. Components are styled with Tailwind. */
+:root {
+  --background: #f6f5ef;
+  --foreground: #152b29;
+  --surface: #fffef9;
+  --surface-tint: #edf2e5;
+  --muted: #56675f;
+  --accent: #c8ee83;
+  --accent-strong: #315544;
+  --danger: #b44039;
+  --border: #dbe1d5;
+  --warning: #a96d11;
+  --shadow: 0 24px 70px rgb(24 36 44 / 8%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-tint: var(--surface-tint);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-danger: var(--danger);
+  --color-border: var(--border);
+  --color-warning: var(--warning);
+  --shadow-card: var(--shadow);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #101c1a;
+    --foreground: #edf4ed;
+    --surface: #182923;
+    --surface-tint: #1e3529;
+    --muted: #b0c0b4;
+    --accent-strong: #c8ee83;
+    --border: #30433a;
+    --danger: #f1968c;
+    --warning: #e8c478;
+  }
+}
+
+/* These accessibility defaults apply to native and future interactive elements. */
+@layer base {
+  :focus-visible {
+    @apply outline-3 outline-offset-3 outline-accent-strong/70;
+  }
+
+  button {
+    @apply cursor-pointer disabled:cursor-not-allowed disabled:opacity-[0.58];
+  }
+}

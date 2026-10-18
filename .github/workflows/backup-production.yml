@@ -1,0 +1,82 @@
+name: Backup production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_backup:
+        description: Type BACKUP-PRODUCTION for an encrypted Prisma backup
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catanova-production-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: github.ref == 'refs/heads/main'
+    name: Encrypt and retain production backup
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    env:
+      BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_ADMIN_URL }}
+      LMS_PG_DUMP: /usr/lib/postgresql/17/bin/pg_dump
+      LMS_PG_RESTORE: /usr/lib/postgresql/17/bin/pg_restore
+    steps:
+      - name: Require explicit production confirmation
+        env:
+          CONFIRMATION: ${{ inputs.confirm_backup }}
+        run: test "$CONFIRMATION" = "BACKUP-PRODUCTION"
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@v9.0.0
+        with:
+          version: "0.12.9"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install project and PostgreSQL client
+        run: |
+          uv sync --locked --no-dev
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client-17
+          "$LMS_PG_DUMP" --version
+      - name: Install pinned age encryption tool
+        run: |
+          curl --fail --silent --show-error --location \
+            https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz \
+            --output "$RUNNER_TEMP/age.tar.gz"
+          echo "cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10  $RUNNER_TEMP/age.tar.gz" \
+            | sha256sum --check
+          tar --extract --gzip --file "$RUNNER_TEMP/age.tar.gz" --directory "$RUNNER_TEMP"
+      - name: Create, verify, and encrypt custom archive
+        run: |
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          plain="$RUNNER_TEMP/catanova-production-${stamp}.dump"
+          encrypted="${plain}.age"
+          uv run --locked --no-dev --no-sync python -m backend.scripts.migrate_data backup --output "$plain" --environment production
+          uv run --locked --no-dev --no-sync python -m backend.scripts.migrate_data verify-backup --archive "$plain" --environment production
+          "$RUNNER_TEMP/age/age" -r "$BACKUP_AGE_RECIPIENT" -o "$encrypted" "$plain"
+          sha256sum "$encrypted" > "${encrypted}.sha256"
+          rm --force "$plain"
+          test -s "$encrypted"
+          test -s "${encrypted}.sha256"
+      - name: Upload encrypted, immutable production recovery point
+        uses: actions/upload-artifact@v7
+        with:
+          name: catanova-production-backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/catanova-production-*.dump.age*
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error

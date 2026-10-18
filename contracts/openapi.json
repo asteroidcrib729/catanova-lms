@@ -812,6 +812,17 @@
             "title": "Environment",
             "type": "string"
           },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -1433,8 +1444,8 @@
     }
   },
   "info": {
-    "summary": "Versioned HTTP delivery adapter for the library management system.",
-    "title": "Library Management System API",
+    "summary": "Catalog. Manage. Discover. The versioned API for the CataNova library workspace.",
+    "title": "CataNova API",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",

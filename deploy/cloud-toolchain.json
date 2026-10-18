@@ -1,0 +1,8 @@
+{
+  "prisma": "8.0.0-rc.15",
+  "vercel": "64.5.0",
+  "render": {
+    "version": "2.29.0",
+    "windows_amd64_sha256": "6ab1d59e4078720b42ea5a4c3f34ad82dc1c8a771b19bb8718d5b437bf870d3a"
+  }
+}
