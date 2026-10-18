@@ -272,8 +272,13 @@ backend. Plan 19 initialized isolated Prisma development/production databases an
 reconciled the empty Supabase source, preserving its migration timestamps. Local
 real-browser read/write, persistence, concurrency, HTTPS cookies and CSRF checks
 passed. Same-origin API relay and manual exact-commit production release/backup
-workflows are implemented. Public hosting, owner-created production administrator,
-reviewed PR merge, and live cutover are still required. Supabase is untouched.
+workflows are implemented. PR #2 is merged; the owner-created production
+administrator, Git-connected hosting, live Render readiness, encrypted GitHub
+backup and real disposable restore checks are verified. The public frontend
+release is pending the monorepo workflow correction's manual PR merge and final
+hosted browser checks. The team-scoped Vercel CI token is accepted; the dashboard
+domain is `https://catanova.vercel.app`. Supabase is untouched. See Plan 19 for
+current execution evidence.
 The owner-capable Prisma credential does not reproduce isolated runtime SQL roles;
 see Plan 19 before exposing production. Local tests are not public capacity or
 hosted disaster-recovery evidence.

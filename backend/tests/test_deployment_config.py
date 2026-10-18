@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from backend.scripts.validate_deployment import REPOSITORY_ROOT, validate_repository
 
 
@@ -49,6 +51,31 @@ def test_validator_requires_the_backend_asgi_entry_point(tmp_path: Path) -> None
     )
 
     assert any("backend.app.main:app" in error for error in validate_repository(tmp_path))
+
+
+@pytest.mark.parametrize("step_index", [0, 1, 2], ids=["pull", "build", "deploy"])
+def test_validator_rejects_doubled_vercel_frontend_root(tmp_path: Path, step_index: int) -> None:
+    _copy_contract_files(tmp_path)
+    workflow_path = tmp_path / ".github" / "workflows" / "deploy-production.yml"
+    workflow = workflow_path.read_text(encoding="utf-8")
+    lines = workflow.splitlines(keepends=True)
+    directories = [index for index, line in enumerate(lines) if "working-directory: ." in line]
+    assert len(directories) == 3
+    lines[directories[step_index]] = "        working-directory: frontend\n"
+    workflow_path.write_text("".join(lines), encoding="utf-8")
+
+    assert any("repository root" in error for error in validate_repository(tmp_path))
+
+
+def test_validator_requires_explicit_vercel_working_directory(tmp_path: Path) -> None:
+    _copy_contract_files(tmp_path)
+    workflow_path = tmp_path / ".github" / "workflows" / "deploy-production.yml"
+    workflow = workflow_path.read_text(encoding="utf-8")
+    workflow_path.write_text(
+        workflow.replace("        working-directory: .\n", "", 1), encoding="utf-8"
+    )
+
+    assert any("repository root" in error for error in validate_repository(tmp_path))
 
 
 def _copy_contract_files(target: Path) -> None:

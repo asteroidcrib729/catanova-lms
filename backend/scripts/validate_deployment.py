@@ -129,6 +129,18 @@ def _validate_workflow(workflow: str, contract: dict[str, object], errors: list[
             errors.append(f"Production release gate missing {fragment!r}.")
     if "supabase" in workflow.lower() or "--token=" in workflow:
         errors.append("Production must not use Supabase commands or token-bearing argv.")
+    vercel_steps = 0
+    for step in re.split(r"(?m)^      - ", workflow):
+        if not re.search(r"vercel@.*\" (?:pull|build|deploy)\b", step):
+            continue
+        vercel_steps += 1
+        if not re.search(r"(?m)^        working-directory: \.\s*$", step):
+            errors.append(
+                "Vercel pull/build/deploy must explicitly run from the repository root; "
+                "the provider applies rootDirectory=frontend itself."
+            )
+    if vercel_steps != 3:
+        errors.append("Production release must include Vercel pull, build and prebuilt deploy.")
 
 
 def _validate_backup_workflow(
