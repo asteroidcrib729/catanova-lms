@@ -94,8 +94,8 @@ Both Prisma schemas have been initialized and reconciled with the empty hosted
 Supabase source. That source contained no accounts, catalog items, or circulation
 records. Existing migration timestamps were preserved. See the concise
 [deployment guide](development-plans/DEPLOYMENT.md) for connection setup and the
-provider's SQL-role limitations. Supabase is intact; retirement remains a separate
-owner decision.
+provider's SQL-role limitations. The old hosted Supabase project was deleted on
+2026-10-18 at the owner's request after verified cutover; exports/backups remain.
 
 After the development database is provisioned and initialized, copy
 `.env.development.example` to the ignored `.env.development` and set its private
@@ -277,8 +277,9 @@ role/CSRF/origin protections, secure cookies and logout passed. The marked test
 feedback was removed afterward; the dedicated ordinary smoke member remains.
 Encrypted GitHub backup and a real disposable restore drill also passed.
 
-The CLI remains available. Supabase is intact; its empty source was reconciled
-while preserving migration timestamps. Retirement is a separate owner decision.
+The CLI remains available. The empty Supabase source was reconciled while
+preserving migration timestamps, then its hosted project was deleted at the
+owner's request after successful cutover. Local WSL data and backups remain.
 The owner-capable Prisma credential does not provide isolated runtime SQL roles,
 and free-tier cold starts still apply. See Plan 19 for evidence, accepted limits
 and ongoing backup/monitoring responsibilities; these checks are not a load test.

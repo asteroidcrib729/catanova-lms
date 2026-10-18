@@ -17,8 +17,9 @@ The Prisma project `catanova-lms` already contains two Singapore databases:
 | Production | `catanova-production` | `main` | `production` |
 
 Both schemas are initialized. Supabase contained no business records; its three
-migration timestamps were preserved in production. Supabase remains untouched.
-Public cutover is now verified; Supabase retirement is a separate owner decision.
+migration timestamps were preserved in production. After verified public cutover,
+the owner authorized deletion of the old hosted Supabase project on 2026-10-18.
+Deletion and continued production health were verified; exports/backups remain.
 
 In [Prisma Console](https://console.prisma.io/), select the correct database →
 **Connect to your database**. Use the standard PostgreSQL **direct** URL:
@@ -194,8 +195,9 @@ CI and start a fresh release for the new main SHA, not an old failed run.
 
 After each release, verify sign-in, protected writes, reload and logout in a real
 browser. These public checks passed on 2026-10-18, including concurrent retries,
-role/CSRF/origin boundaries and database persistence. Supabase remains untouched;
-after new Prisma writes, do not switch back without reconciling those writes.
+role/CSRF/origin boundaries and database persistence. The old hosted Supabase
+project is deleted; recovery requires the preserved exports/backups, not resuming
+that project. Reconcile any new writes before switching databases.
 
 **Backups:** configure `BACKUP_AGE_RECIPIENT` in the same GitHub environment and
 run **Backup production** with `BACKUP-PRODUCTION`. It encrypts a PostgreSQL 17 archive of `lms` and

@@ -4,8 +4,9 @@ Started and completed: 2026-10-18. Status: **complete**. Database migration,
 Prisma-backed local preview, encrypted backup/restore, Git-backed production
 release and real public-browser verification passed. PR #3 released reviewed
 commit `9a5cf1a47eb4cdbe9c39119ba5633bf4e163b45b` to Render and Vercel.
-Dashboard: <https://catanova.vercel.app>. Supabase remains intact; its retirement
-is a separate owner decision, not an automated step of this plan.
+Dashboard: <https://catanova.vercel.app>. After verified cutover, the owner
+separately authorized deletion of the old Supabase project on 2026-10-18;
+deletion and continued production health were verified as recorded below.
 
 ## Chronological execution record
 
@@ -204,13 +205,14 @@ the final production cutover record supersedes them.
 - [x] Stable main CI passed for `9a5cf1a`; a fresh exact-main release succeeded.
 - [x] Render and Vercel serve that same commit in Singapore, with the new domain.
 - [x] Hosted authenticated smoke and real Chrome read/write/security checks passed.
-- [x] Final read-only source counts match the migration baseline; Supabase is intact.
+- [x] Final read-only source counts matched the migration baseline before retirement.
 - [x] Redacted evidence and current operating instructions are recorded below.
 
 Ongoing owner operations: retain backups and their decryption identity separately,
 monitor service health/usage and token expiry, and merge evidence-only follow-ups
-through the usual PR process. Retiring Supabase is optional and separately
-authorized. After new Prisma writes, switching back requires data reconciliation.
+through the usual PR process. The separately authorized Supabase retirement is
+recorded below. Recovery now requires the preserved exports/backups rather than
+resuming the deleted project; reconcile any writes before a database switch.
 
 ### Hosted execution after the owner's PR merge
 
@@ -389,6 +391,34 @@ authorized. After new Prisma writes, switching back requires data reconciliation
   of DML-only SQL-role isolation remain explicitly accepted limitations. Render
   free-tier cold starts and bounded resources still apply; no keep-awake automation
   or paid upgrades were introduced.
+
+### Separately authorized Supabase retirement: 2026-10-18
+
+- Following successful public cutover, the owner explicitly requested deletion
+  of the old project. Reconfirmed exact project identity:
+  `library-management-system`, ref `bchhpwjemniojkerozfm`, organization
+  `cvjjqbsoiklzdxicpvba`. No other Supabase project was placed in scope.
+- Rechecked all eleven application/session tables: zero rows; schema_version:
+  three rows. Auth users, Storage objects and buckets were zero. No Edge Functions
+  or additional preview databases existed, and the only application tables were
+  the twelve expected lms tables. Historical migration SQL is retained locally.
+- Verified the preserved source extract and encrypted Prisma production recovery
+  archive still match their recorded SHA-256 checksums, and the private age
+  identity still exists. Supabase project deletion also removes its provider
+  backups and configuration; the deleted project itself is not recoverable.
+- Production initially returned a warming 503; direct and relayed readiness then
+  both returned ready/production at revision `9a5cf1a` before deletion. No deletion
+  ran while the production-health gate was unresolved.
+- The connected Supabase tools do not expose deletion. The pinned, independently
+  authenticated CLI was inspected with help and used the documented exact target:
+  `supabase projects delete bchhpwjemniojkerozfm --yes`. It returned
+  `Deleted project`. CLI inventory and an independent connected-tool project list
+  both verified the source is absent and the unrelated project is preserved.
+- Relayed production readiness still returned ready/production at `9a5cf1a`
+  after deletion, confirming continued database-backed operation. Prisma databases,
+  Render/Vercel resources, local WSL data, source extract and encrypted recovery
+  archive were not deleted or reset. Confirmed no obsolete local CLI project-ref
+  link remained after deletion; local configuration and migrations were retained.
 
 ## Permission compatibility investigation — retained findings
 

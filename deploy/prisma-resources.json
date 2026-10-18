@@ -8,6 +8,12 @@
   "application_schema_version": 3,
   "public_cutover_complete": true,
   "public_cutover_verified_date": "2026-10-18",
+  "retired_supabase_source": {
+    "project_ref": "bchhpwjemniojkerozfm",
+    "project_name": "library-management-system",
+    "deleted_date": "2026-10-18",
+    "deletion_verified": true
+  },
   "environments": {
     "production": {
       "branch": "main",
