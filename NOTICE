@@ -1,0 +1,16 @@
+CataNova - Catalog. Manage. Discover.
+Copyright 2026 Faraz Hussain
+
+Created and maintained by Faraz Hussain (GitHub: asteroidcrib729).
+Original source repository: https://github.com/asteroidcrib729/catanova-lms
+
+The original CataNova source code and documentation, including the legacy
+library-management implementation, are licensed under the Apache License,
+Version 2.0. See LICENSE for the full terms.
+
+Third-party components and assets retain their own licenses and notices.
+See THIRD_PARTY_NOTICES.md for the retained Next.js template asset notice;
+installed dependencies also supply their own license files.
+
+This NOTICE provides attribution and does not add conditions to or modify
+the Apache License. No endorsement or trademark rights are granted.

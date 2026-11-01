@@ -12,3 +12,7 @@ distribution name, is Git-ignored, and is not application source.
 
 The repository-level
 [README](../README.md) covers the full monorepo.
+
+Original backend code is [Apache-2.0](../LICENSE). Preserve [NOTICE](../NOTICE)
+when redistributing; [third-party terms](../THIRD_PARTY_NOTICES.md) still apply.
+Python wheels and source distributions include all three licensing files.
