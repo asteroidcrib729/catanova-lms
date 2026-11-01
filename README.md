@@ -20,6 +20,7 @@ Brand assets and design rules are documented in [BRAND.md](development-plans/BRA
 | `backend/scripts/` | Contract, deployment validation, migration, and CI classification tools |
 | `scripts/` | Repository-level PowerShell developer workflows |
 | `development-plans/` | Ordered implementation plans using `development-plan-xx.md` names |
+| `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md` | Apache-2.0 terms, original-author attribution, and retained third-party terms |
 
 ## Local setup (PowerShell)
 
@@ -70,7 +71,7 @@ The isolated frontend requires the Node/npm versions declared in `frontend/packa
 Set-Location frontend
 Copy-Item .env.local.example .env.local
 & "C:\Program Files\nodejs\npm.cmd" ci
-& "C:\Program Files\nodejs\npm.cmd" run dev
+& "C:\Program Files\nodejs\npm.cmd" run dev -- --hostname 127.0.0.1
 ```
 
 The browser calls same-origin Next.js API routes. Server-only `BACKEND_API_URL`
@@ -273,21 +274,26 @@ Passwords are handled with Argon2id through `argon2-cffi`. Plaintext passwords m
 
 ## Project status
 
-Plan 19 is complete. [CataNova](https://catanova.vercel.app) runs on Vercel with
-FastAPI on Render and separate production/development Prisma Postgres databases.
-PR #3 released reviewed commit `9a5cf1a`; CI, authenticated release smoke checks
-and real public-Chrome read/write, reload persistence, concurrent retries,
-role/CSRF/origin protections, secure cookies and logout passed. The marked test
-feedback was removed afterward; the dedicated ordinary smoke member remains.
-Encrypted GitHub backup and a real disposable restore drill also passed.
+The latest recorded verified production release is **2026-10-18**, commit
+`f658f77`, merged through [PR #4](https://github.com/asteroidcrib729/catanova-lms/pull/4).
+[CataNova](https://catanova.vercel.app) uses Vercel, FastAPI on Render and separate
+production/development Prisma Postgres databases. The
+[main CI run](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39147084344)
+and [production release](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39147255023)
+passed. [Plan 21](development-plans/development-plan-21.md) records 224 backend and
+59 frontend passing tests, real-browser functional/security checks, accessibility
+checks and their limits. Encrypted backup and a disposable restore drill also
+passed during the October release work. These are dated verification results,
+not a real-time uptime guarantee or a new production test on every documentation update.
 
 The CLI remains available. The empty Supabase source was reconciled while
 preserving migration timestamps, then its hosted project was deleted at the
 owner's request after successful cutover. Legacy WSL/SQLite/text data and old
 backups were also removed; a fresh encrypted current-production backup is retained.
 The owner-capable Prisma credential does not provide isolated runtime SQL roles,
-and free-tier cold starts still apply. See Plan 19 for evidence, accepted limits
-and ongoing backup/monitoring responsibilities; these checks are not a load test.
+and free-tier cold starts still apply. See Plan 19 for cutover evidence and
+accepted provider limits, and the deployment guide for ongoing backup/monitoring
+responsibilities; these checks are not a load test.
 
 ## Administrator access
 
@@ -311,5 +317,24 @@ The [deployment guide](development-plans/DEPLOYMENT.md) covers Prisma connection
 masked owner administrator setup, Render/Vercel configuration, and the manual
 **Deploy production** workflow. The workflow requires successful CI on the exact
 current `main` commit and a protected GitHub `production` environment. Merge from
-`pre-production` through your reviewed PR first. Remaining hosted release gates
-are tracked in [Plan 19](development-plans/development-plan-19.md).
+`pre-production` through your reviewed PR first. Historical cutover evidence is
+in [Plan 19](development-plans/development-plan-19.md); the latest recorded release
+verification is in [Plan 21](development-plans/development-plan-21.md).
+
+## License
+
+I release CataNova's original code and documentation, including the legacy C++
+source, under [Apache-2.0](LICENSE). Copyright 2026 Faraz Hussain
+([asteroidcrib729](https://github.com/asteroidcrib729)). Author and original
+repository attribution is recorded in [NOTICE](NOTICE).
+
+When redistributing, include the license, preserve applicable attribution/notices
+(including NOTICE), and prominently identify changed files as required by the
+license. Commercial use and modification are allowed; a mandatory in-app credit
+banner or publication of all derivative source code is not required. No trademark
+rights are granted. See the license for the complete terms.
+
+[Third-party assets and dependencies retain their own terms](THIRD_PARTY_NOTICES.md).
+The frontend's `private: true` prevents accidental npm publication; it does not
+change this repository's open-source license. Credentials, hosted database
+records and private backups are not part of the source distribution.

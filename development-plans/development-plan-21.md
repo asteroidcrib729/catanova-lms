@@ -52,10 +52,10 @@ brand name, tab navigation/panel relationship and mobile-menu focus behavior.
 - [x] Complete production ordinary-member protected write/reload/logout checks.
 - [x] Repeat axe, keyboard, responsive and reduced-motion checks on fixed code.
 - [x] Clean up generated browser-test accounts, records, databases and processes.
-- [ ] Review and commit pending source, migration relocation, tests and evidence.
-- [ ] Push `pre-production`, create PR, verify hosted CI and merge without bypass.
-- [ ] Record PR/merge state and distinguish repository release from deployment.
-- [ ] Run the authorized protected production release and repeat live verification.
+- [x] Review and commit pending source, migration relocation, tests and evidence.
+- [x] Push `pre-production`, create PR, verify hosted CI and merge without bypass.
+- [x] Record PR/merge state and distinguish repository release from deployment.
+- [x] Run the authorized protected production release and repeat live verification.
 
 ## Results
 
@@ -101,8 +101,19 @@ preserved. Tooling used Chrome with Playwright 1.64.1 and axe integration 4.14.0
   workflows were verified on the isolated database, not on genuine production
   financial/circulation records.
 - Final hosted CI, merge commit, deployment run and post-release outcomes are
-  recorded in the resulting GitHub PR's release-verification comment. They are
+  recorded in the resulting GitHub PR's release-verification description. They are
   not inferred from local checks or a deploy trigger being accepted.
+
+## Completed delivery, 2026-10-18
+
+[PR #4](https://github.com/asteroidcrib729/catanova-lms/pull/4) merged to `main`
+as `f658f77d2fb437b7c4cfef3d14438722b4f882df`.
+[Main CI](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39147084344)
+and the authorized
+[Deploy production run](https://github.com/asteroidcrib729/catanova-lms/actions/runs/39147255023)
+both succeeded on that revision. The PR description records the Render/Vercel
+release and post-release browser verification. This closes the delivery checklist;
+the testing limitations above and ongoing operational responsibilities still apply.
 
 References: [Playwright accessibility testing](https://playwright.dev/docs/accessibility-testing),
 [WCAG non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html).

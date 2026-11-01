@@ -3,8 +3,11 @@
 Stack: **Prisma Postgres → Render FastAPI → Vercel Next.js**.
 Run PowerShell commands from the repository root; stop on errors.
 
-Production verified on 2026-10-18: <https://catanova.vercel.app>, commit `9a5cf1a`.
-Database, backend, frontend, real-browser writes/security and backup/restore passed.
+Latest recorded production verification: 2026-10-18, <https://catanova.vercel.app>,
+commit `f658f77` ([PR #4](https://github.com/asteroidcrib729/catanova-lms/pull/4)).
+CI, deployment and post-release checks passed; [Plan 21](development-plan-21.md)
+records the scope and limits. Backup/restore also passed during the October release.
+This is dated release evidence, not a real-time availability assertion.
 The steps below are for connection setup, recreation and future releases.
 
 ## 1. Database connections

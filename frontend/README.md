@@ -11,7 +11,7 @@ Copy `.env.local.example` to `.env.local`, then use the executable shim because 
 
 ```powershell
 & "C:\Program Files\nodejs\npm.cmd" ci
-& "C:\Program Files\nodejs\npm.cmd" run dev
+& "C:\Program Files\nodejs\npm.cmd" run dev -- --hostname 127.0.0.1
 ```
 
 Run FastAPI separately from this directory before testing signed-in workflows:
@@ -22,6 +22,8 @@ uv run --locked --env-file .env.development uvicorn backend.app.main:app --reloa
 ```
 
 Quality and contract commands:
+
+Run the following from `frontend/` (return there after starting FastAPI):
 
 ```powershell
 & "C:\Program Files\nodejs\npm.cmd" run generate:api
@@ -65,3 +67,9 @@ and keep access to source files outside the Root Directory disabled. Configure
 server-only `BACKEND_API_URL` and `APP_ORIGIN`, leave `NEXT_PUBLIC_API_BASE_URL`
 empty, and retain the default `NEXT_PUBLIC_CSRF_COOKIE_NAME`; follow
 [`../development-plans/DEPLOYMENT.md`](../development-plans/DEPLOYMENT.md) and never add database or provider credentials here.
+
+## License
+
+Original dashboard code is [Apache-2.0](../LICENSE); retain [NOTICE](../NOTICE).
+[Third-party terms](../THIRD_PARTY_NOTICES.md) apply to template assets and
+dependencies. `private: true` prevents npm publication, not open-source reuse.
